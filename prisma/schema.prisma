@@ -50,6 +50,10 @@ enum SenderType {
   DOCTOR
   PATIENT
 }
+enum RoomType {
+  SURGERY
+  EMERGENCY
+}
 model User {
   id String @id @default(uuid())
   email String @unique
@@ -118,6 +122,8 @@ model Department{
   nurses Nurse[]
   emergencyQueues EmergencyQueue[]
 
+
+  rooms Room[]
 }
 model Appointment {
   id            String   @id @default(uuid())
@@ -145,10 +151,12 @@ model Visit {
   patientId     String
   doctorId      String
   departmentId  String
+  roomId        String? // Added for Room relation
 
   patient       Patient   @relation(fields: [patientId], references: [id])
   doctor        Doctor    @relation(fields: [doctorId], references: [id])
   department    Department @relation(fields: [departmentId], references: [id])
+  room          Room?     @relation(fields: [roomId], references: [id]) // Added relation
 
   diagnosis     String?
   notes         String?
@@ -214,4 +222,14 @@ model Vital {
   temperature Float?
 
   recordedAt DateTime @default(now())
+}
+model Room {
+  id          String   @id @default(uuid())
+  name        String   // e.g., "Surgery Room 1" or "ER 5"
+  type        RoomType
+  departmentId String
+  department  Department @relation(fields: [departmentId], references: [id])
+
+  visits      Visit[]      // which visits happened in this room
+  createdAt   DateTime     @default(now())
 }
