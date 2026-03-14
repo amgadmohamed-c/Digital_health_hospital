@@ -11,15 +11,207 @@ generator client {
 datasource db {
   provider = "postgresql"
 }
-
-model user {
-  id Int @id @default(autoincrement())
-  name String 
-   role Role @default(PATIENT)  
-}
 enum Role{
   PATIENT 
   DOCTOR
+  NURSE
   ADMIN
 
+}
+
+enum Gender{
+  MALE
+  FEMALE 
+}
+enum AppointmentType {
+  HOSPITAL
+  ONLINE
+}
+
+enum AppointmentStatus {
+  SCHEDULED
+  ACTIVE
+  COMPLETED
+  CANCELLED
+}
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum QueueStatus {
+  WAITING
+  IN_PROGRESS
+  DONE
+}
+enum SenderType {
+  DOCTOR
+  PATIENT
+}
+model User {
+  id String @id @default(uuid())
+  email String @unique
+  role Role @default(PATIENT)
+  password String 
+  create_at DateTime @default(now())  
+  patient Patient?
+  doctor Doctor?
+  nurse Nurse?
+
+}
+
+model Patient{
+  id String @id @default(uuid())
+  userId      String   @unique
+  user        User     @relation(fields: [userId], references: [id])
+  name String 
+  age Int 
+  gender Gender @default(MALE)
+  phone String
+  bloodtype String?
+  allergies String?
+
+  visits      Visit[]
+  appointments Appointment[]
+  records     MedicalRecord[]
+  emergencyQueues EmergencyQueue[]
+  vitals      Vital[] // Added relation field for Vital
+
+  createdAt   DateTime @default(now())
+
+}
+model Doctor{
+  id String @id @default(uuid())
+  userId      String   @unique
+  user        User     @relation(fields: [userId], references: [id])
+  name          String
+  specialization String
+  departmentId  String
+  department    Department @relation(fields: [departmentId], references: [id])
+  appointments  Appointment[]
+  visits        Visit[]
+
+  createdAt     DateTime @default(now())
+
+} 
+model Nurse {
+  id String @id @default(uuid())
+
+  userId String @unique
+  user User @relation(fields: [userId], references: [id])
+
+  name String
+  departmentId String
+  department Department @relation(fields: [departmentId], references: [id])
+
+  createdAt DateTime @default(now())
+}
+
+model Department{
+  id String @id @default(uuid())
+  name String @unique
+  doctors Doctor[]
+  visits    Visit[]
+  appointments Appointment[]
+  nurses Nurse[]
+  emergencyQueues EmergencyQueue[]
+
+}
+model Appointment {
+  id            String   @id @default(uuid())
+
+  patientId     String
+  doctorId      String
+  departmentId  String
+
+  patient       Patient   @relation(fields: [patientId], references: [id])
+  doctor        Doctor    @relation(fields: [doctorId], references: [id])
+  department    Department @relation(fields: [departmentId], references: [id])
+
+  type          AppointmentType
+  status        AppointmentStatus
+
+  scheduledAt   DateTime
+
+  chatSession   ChatSession?
+
+  createdAt     DateTime @default(now())
+}
+model Visit {
+  id            String   @id @default(uuid())
+
+  patientId     String
+  doctorId      String
+  departmentId  String
+
+  patient       Patient   @relation(fields: [patientId], references: [id])
+  doctor        Doctor    @relation(fields: [doctorId], references: [id])
+  department    Department @relation(fields: [departmentId], references: [id])
+
+  diagnosis     String?
+  notes         String?
+
+  createdAt     DateTime @default(now())
+}
+model EmergencyQueue {
+  id         String   @id @default(uuid())
+
+  patientId  String
+  patient    Patient  @relation(fields: [patientId], references: [id])
+
+  priority   Priority
+  status     QueueStatus
+  departmentId String
+  department Department @relation(fields: [departmentId], references: [id]) 
+
+  arrivalTime DateTime @default(now())
+}
+model ChatSession {
+  id            String   @id @default(uuid())
+
+  appointmentId String   @unique
+  appointment   Appointment @relation(fields: [appointmentId], references: [id])
+
+  messages      Message[]
+
+  startedAt     DateTime?
+  endedAt       DateTime?
+}
+model Message {
+  id         String   @id @default(uuid())
+
+  sessionId  String
+  session    ChatSession @relation(fields: [sessionId], references: [id])
+
+  senderId   String
+  senderType SenderType
+
+  content    String
+
+  createdAt  DateTime @default(now())
+}
+model MedicalRecord {
+  id        String   @id @default(uuid())
+
+  patientId String
+  patient   Patient  @relation(fields: [patientId], references: [id])
+
+  title     String
+  fileUrl   String
+
+  createdAt DateTime @default(now())
+}
+model Vital {
+  id String @id @default(uuid())
+
+  patientId String
+  patient Patient @relation(fields: [patientId], references: [id])
+
+  heartRate Int?
+  bloodPressure String?
+  temperature Float?
+
+  recordedAt DateTime @default(now())
 }
