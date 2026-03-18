@@ -4,12 +4,16 @@
 // Get a free hosted Postgres database in seconds: `npx create-db`
 
 generator client {
-  provider = "prisma-client"
+  provider = "prisma-client-js"
   output   = "../generated/prisma"
-}
 
+
+
+}
 datasource db {
   provider = "postgresql"
+
+
 }
 enum Role{
   PATIENT 
@@ -56,9 +60,16 @@ enum RoomType {
 }
 model User {
   id String @id @default(uuid())
+  name String 
   email String @unique
-  role Role @default(PATIENT)
+  phone String
+  gender Gender @default(MALE)
+  age Int 
   password String 
+
+
+
+  role Role @default(PATIENT)
   create_at DateTime @default(now())  
   patient Patient?
   doctor Doctor?
@@ -70,10 +81,6 @@ model Patient{
   id String @id @default(uuid())
   userId      String   @unique
   user        User     @relation(fields: [userId], references: [id])
-  name String 
-  age Int 
-  gender Gender @default(MALE)
-  phone String
   bloodtype String?
   allergies String?
 
