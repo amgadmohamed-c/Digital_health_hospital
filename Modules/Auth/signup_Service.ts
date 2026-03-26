@@ -1,5 +1,5 @@
 
-import { saveUser } from "./signUp_controller";
+import { saveUser } from "./signUp_Controller";
 import { Request , Response } from "express";
 
 export async function userSignup(req :Request , res : Response){

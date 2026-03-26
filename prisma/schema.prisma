@@ -240,3 +240,11 @@ model Room {
   visits      Visit[]      // which visits happened in this room
   createdAt   DateTime     @default(now())
 }
+
+model RefreshToken {
+  id    String   @id @default(uuid())
+  token String   @unique
+  userId String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+}
