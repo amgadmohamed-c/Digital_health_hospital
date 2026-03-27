@@ -33,7 +33,7 @@ export async function userSignup(req :Request , res : Response){
     catch(error ){
           if (error instanceof Error) {
      console.log(error.message);
-     return res.status(500).json("coudnt save user");
+     return res.status(409).json("user already exist");
     }
 }
 

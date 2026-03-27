@@ -35,6 +35,11 @@ export async function saveUser(user:CreateUserInput){
             }
             
         })
+        const patient = await prisma.patient.create({
+            data:{
+                userId:newUser.id
+            }
+        })
     }
     catch(error){
      if (error instanceof Error) {
