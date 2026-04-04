@@ -17,7 +17,7 @@ export async function adminCreatedoctor(req:Request,res:Response) {
         const isadmin = await isAdmin(req.user.toString());
         
     }catch(Err:any){
-        return res.status(401).json(Err.message || "user might not be admin");
+        return res.status(401).json({err :Err.message || "user might not be admin"});
     }
     try{
         const data = {
