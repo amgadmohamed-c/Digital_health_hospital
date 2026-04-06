@@ -60,6 +60,7 @@ export async function createNurse(newNurse :nurse){
       if(!newNurseModel){
         throw new Error("failed nurse creatation");
       }
+      return newNurseModel;
 
 
     }catch(err : any){

@@ -1,5 +1,6 @@
 import { Request,Response } from "express";
-import createDoctor , {isAdmin} from "./createDoctor_service";
+import { createNurse }  from "./createNurse_service";
+import { isAdmin } from "./createDoctor_service";
 import { JwtPayload } from "jsonwebtoken";
 declare global {
   namespace Express {
@@ -8,18 +9,14 @@ declare global {
     }
   }
 }
-export async function adminCreatedoctor(req:Request,res:Response) {
+export async function adminCreatenurse(req:Request,res:Response) {
     if (!req.user) {
     return res.status(401).json({ err: "Unauthorized: no user found on request" });
          }
 
     try{
-        console.log(req.user.toString())
-        const {email}  = req.user as JwtPayload;
-        console.log(email)
-        const isadmin = await isAdmin(email);
-
-
+        const isadmin = await isAdmin(req.user.toString());
+        
     }catch(Err:any){
         return res.status(401).json({err :Err.message || "user might not be admin"});
     }
@@ -35,9 +32,9 @@ export async function adminCreatedoctor(req:Request,res:Response) {
                 gender:req.body.gender,
 
         }
-        const newDoctor = await createDoctor(data);
-        if(newDoctor){
-            return res.status(201).json(newDoctor);
+        const newNurse = await createNurse(data);
+        if(newNurse){
+            return res.status(201).json(newNurse);
         }
         else{
             return res.status(400).json({err: "bad request user data was wrong"})
