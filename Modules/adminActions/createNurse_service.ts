@@ -7,7 +7,6 @@ type nurse = {
         email:string , 
         password :string , 
         Dep : string , 
-        specialization : string ,
         phone:string,
         age:number,
         gender:Gender,
@@ -40,7 +39,7 @@ export async function createNurse(newNurse :nurse){
                             email:newNurse.email,
                             password:(await bcrypt.hash(newNurse.password,10)).toString(),
                             phone:newNurse.phone,
-                            role:"DOCTOR",
+                            role:"NURSE",
                             gender:newNurse.gender,
                             age:newNurse.age
 
@@ -49,10 +48,9 @@ export async function createNurse(newNurse :nurse){
         if(!createdNurseUser){
             throw new Error("couldnt create user try again");
         }
-              const newNurseModel =await prisma.doctor.create({
+              const newNurseModel =await prisma.nurse.create({
         data:{
             name : newNurse.name,
-            specialization:newNurse.specialization,
             userId:createdNurseUser.id,
             departmentId:department.id
         }

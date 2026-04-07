@@ -26,7 +26,6 @@ export async function adminCreatenurse(req:Request,res:Response) {
                 email:req.body.email , 
                 password :req.body.password , 
                 Dep : req.body.department , 
-                specialization : req.body.specialization ,
                 phone:req.body.phone,
                 age:req.body.age,
                 gender:req.body.gender,

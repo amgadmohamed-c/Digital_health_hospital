@@ -45,7 +45,7 @@ export async function adminCreatedoctor(req:Request,res:Response) {
  
 
     }catch(err:any){
-        return res.status(400).json({err :err.message});
+        return res.status(409).json({err :err.message});
         
     }
 

@@ -1,10 +1,10 @@
 POST http://localhost:8000/createdoctor
 Content-Type: application/json
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImFtZ2Fkc2hhYXBhbkBnbWFpbC5jb20iLCJpYXQiOjE3NzU1MDg2NjIsImV4cCI6MTc3NTUwOTU2Mn0.MbQo6OKGUtW4HefhkIbMKUktMKbk1HjtFc4EG8HLOKI
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImFtZ2Fkc2hhYXBhbkBnbWFpbC5jb20iLCJpYXQiOjE3NzU1NTIyNzEsImV4cCI6MTc3NTU1MzE3MX0.-orjW-E1wD5gp5-YEQyFqOTCaySTZqfDeYtKXP-SULE
 
 {
     "name": "amgad",
-    "email": "amgadmohamed@gmail.com",
+    "email": "shing@gmail.com",
     "password": "123456789",
     "age": 21,
     "phone": "01157174086",
