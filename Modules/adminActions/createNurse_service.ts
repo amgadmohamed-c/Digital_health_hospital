@@ -50,7 +50,7 @@ export async function createNurse(newNurse :nurse){
         }
               const newNurseModel =await prisma.nurse.create({
         data:{
-            name : newNurse.name,
+            
             userId:createdNurseUser.id,
             departmentId:department.id
         }

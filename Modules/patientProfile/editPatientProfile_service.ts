@@ -1,16 +1,16 @@
 import prisma from "../lib/prisma";
 import { Gender } from "@prisma/client";
 type editProfile = {
-  name: string
+  name?: string
   email: string
-  phone: string
-  age: number
+  phone?: string
+  age?: number
   gender?: Gender
-  img :string,
-  bloodtype :string,
-  allergies:string,
-  recordTitle : string, 
-  recordUrl: string[]
+  img ?:string,
+  bloodtype? :string,
+  allergies?:string,
+  recordTitle? : string, 
+  recordUrl?: string[]
 
 
 }
@@ -26,10 +26,10 @@ export async function editPatientProfile(profileData:editProfile){
         const newUser = await prisma.user.update({
             where:{email:exist.email},
             data:{
-                name :profileData.name,
-                phone:profileData.phone,
-                age:profileData.age,
-                gender:profileData.gender
+                ...(profileData.name && {name : profileData.name}),
+                ...(profileData.phone &&{phone:profileData.phone}),
+                ...(profileData.age &&{age:profileData.age}),
+                ...(profileData.gender &&{gender:profileData.gender})
             }
         })
         const patient = await prisma.patient.findUnique({where:{userId :exist.id}
@@ -39,10 +39,13 @@ export async function editPatientProfile(profileData:editProfile){
         }
         const newPatient = await prisma.patient.update({
             where:{userId :exist.id},
-            data:{img :profileData.img , 
-                bloodtype : profileData.bloodtype, 
-                allergies : profileData.allergies,  
-            }
+            data:
+            
+            {
+                ...(profileData.img &&{img :profileData.img }), 
+                ...(profileData.allergies &&{img :profileData.allergies }),
+                ...(profileData.bloodtype &&{img :profileData.bloodtype })            
+}
         })
         const medicalRecord = await prisma.medicalRecord.findFirst({
             where:{patientId : patient?.id}
@@ -53,8 +56,8 @@ export async function editPatientProfile(profileData:editProfile){
         const newPatientRecord = await prisma.medicalRecord.update({
             where:{id : medicalRecord.id},
             data:{
-                title: profileData.recordTitle,
-                fileUrl: profileData.recordUrl
+        ...(profileData.recordTitle &&{title :profileData.recordTitle }),
+        ...(profileData.recordUrl &&{fileUrl :profileData.recordUrl })
             }
         })
      return true

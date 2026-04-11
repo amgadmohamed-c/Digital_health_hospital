@@ -67,7 +67,6 @@ export default  async function createDoctor(doctorData:doctor){
   
       const doctor =await prisma.doctor.create({
         data:{
-            name : newDoctor.name,
             specialization:doctorData.specialization,
             userId:newDoctor.id,
             departmentId:department.id
