@@ -1,0 +1,49 @@
+### Edit Patient Profile (with files)
+# Requires REST Client extension in VS Code
+
+@baseUrl = http://localhost:8000
+@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6Im1vaGFtZWRhbWdhZDIzQGdtYWlsLmNvbSIsImlhdCI6MTc3NTkyMDQyNCwiZXhwIjoxNzc1OTIxMzI0fQ.QUdcUdjw75c5jc-CfAB4hBl1jCAfJk2t-WugHj9PUnc
+
+PUT {{baseUrl}}/editprofile
+Authorization: Bearer {{token}}
+Content-Type: multipart/form-data; boundary=----FormBoundary
+
+------FormBoundary
+Content-Disposition: form-data; name="name"
+
+John Doe
+------FormBoundary
+Content-Disposition: form-data; name="phone"
+
++1234567890
+------FormBoundary
+Content-Disposition: form-data; name="age"
+
+30
+------FormBoundary
+Content-Disposition: form-data; name="gender"
+
+MALE
+------FormBoundary
+Content-Disposition: form-data; name="bloodtype"
+
+A+
+------FormBoundary
+Content-Disposition: form-data; name="allergies"
+
+Penicillin
+------FormBoundary
+Content-Disposition: form-data; name="recordTitle"
+
+Blood Test Results
+------FormBoundary
+Content-Disposition: form-data; name="profile"; filename="profile.jpg"
+Content-Type: image/jpeg
+
+< ./profile.jpg
+------FormBoundary
+Content-Disposition: form-data; name="records"; filename="record1.pdf"
+Content-Type: application/pdf
+
+< ./record1.pdf
+------FormBoundary--

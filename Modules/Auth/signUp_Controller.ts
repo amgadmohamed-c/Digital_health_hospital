@@ -40,6 +40,13 @@ export async function saveUser(user:CreateUserInput){
                 userId:newUser.id
             }
         })
+        await prisma.medicalRecord.create({
+       data: {
+        patientId: patient.id,
+        title: "Initial Record",
+        fileUrl: []
+    }
+})
     }
     catch(error){
      if (error instanceof Error) {
