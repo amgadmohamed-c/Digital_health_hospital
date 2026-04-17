@@ -1,6 +1,6 @@
 POST http://localhost:8000/createdoctor
 Content-Type: application/json
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImFtZ2Fkc2hhYXBhbkBnbWFpbC5jb20iLCJpYXQiOjE3NzU1NTIyNzEsImV4cCI6MTc3NTU1MzE3MX0.-orjW-E1wD5gp5-YEQyFqOTCaySTZqfDeYtKXP-SULE
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6Im1vaGFtZWRhbWdhZDIzQGdtYWlsLmNvbSIsImlhdCI6MTc3NjQzNDQzNSwiZXhwIjoxNzc2NDM1MzM1fQ.FaaPgfAWFJGmqxAW4eyTxHOGu0jXIkt2XIAA7IQ0td8
 
 {
     "name": "amgad",

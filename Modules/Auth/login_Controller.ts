@@ -38,7 +38,9 @@ export  async function Login_Auth(req:Request,res:Response){
             access_Token:access_Token,
             expiresin: new Date(Date.now() + 15*60*1000).toISOString(),
             refresh_Token:refresh_Token,
-            role:user?.role
+            role:user?.role ,
+            ...(user.patient && user.patient), 
+            ...(user.doctor && user.doctor)
 
         })
     }catch(errors){

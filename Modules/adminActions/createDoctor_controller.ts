@@ -1,6 +1,7 @@
 import { Request,Response } from "express";
 import createDoctor , {isAdmin} from "./createDoctor_service";
 import { JwtPayload } from "jsonwebtoken";
+
 declare global {
   namespace Express {
     interface Request {
@@ -18,6 +19,9 @@ export async function adminCreatedoctor(req:Request,res:Response) {
         const {email}  = req.user as JwtPayload;
         console.log(email)
         const isadmin = await isAdmin(email);
+        if(isadmin != true){
+            throw new Error("user is not admin")
+        }
 
 
     }catch(Err:any){

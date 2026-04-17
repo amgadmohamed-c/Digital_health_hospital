@@ -14,13 +14,12 @@ export async function adminCreatenurse(req:Request,res:Response) {
     return res.status(401).json({ err: "Unauthorized: no user found on request" });
          }
 
+
+        
+
     try{
         const isadmin = await isAdmin(req.user.toString());
-        
-    }catch(Err:any){
-        return res.status(401).json({err :Err.message || "user might not be admin"});
-    }
-    try{
+
         const data = {
                 name : req.body.name , 
                 email:req.body.email , 

@@ -17,17 +17,25 @@ export  async function UserLogin(data : userdata){
         const user = await prisma.user.findUnique({
             where:{
                 email:data.email,
-            }
+            },
+            include:{patient:true , 
+                doctor:true
+            } 
+            
         })
         if(user){
         const doesExist= await bcrypt.compare(data.password,user.password)
         if(!doesExist){
             throw new Error("password is incorrect");
         }
-        return user;
+            
+        return user  
+            
+        
     }else{
         throw new Error("user not found")
     }
+    
 
 
         

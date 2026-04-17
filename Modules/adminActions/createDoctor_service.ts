@@ -20,12 +20,14 @@ export async function isAdmin(email:string){
         const admin = await prisma.user.findUnique(
             {
                 where:{
-                    email:email
+                    email:email , 
+                    role:"ADMIN"
                 }
+
             }
         )
         if(!admin){
-            throw new Error("user is not an admin or smt went wrong");
+            throw new Error("user is not an admin ");
         }
         return true
     }
