@@ -11,7 +11,8 @@ type CreateUserInput = {
   email: string
   password: string
   phone: string
-  age: number
+  age: number,
+  ssn : string
   gender?: Gender
 }
 
@@ -31,7 +32,8 @@ export async function saveUser(user:CreateUserInput){
                 password : hashedPassword,
                 phone : user.phone,
                 age : user.age ,
-                gender:user.gender
+                gender:user.gender,
+                ssn : user.ssn
             }
             
         })

@@ -10,6 +10,8 @@ datasource db {
   provider = "postgresql"
 }
 
+// ─── Enums ───────────────────────────────────────────────────────────────────
+
 enum Role {
   PATIENT
   DOCTOR
@@ -43,8 +45,10 @@ enum Priority {
 
 enum QueueStatus {
   WAITING
-  IN_PROGRESS
-  DONE
+  IN_TREATMENT
+  STABLE
+  ADMITTED
+  DISCHARGED
 }
 
 enum SenderType {
@@ -57,6 +61,13 @@ enum RoomType {
   EMERGENCY
 }
 
+// [MODIFIED] Added AVAILABLE, OCCUPIED, MAINTENANCE to track real-time room occupancy
+enum RoomStatus {
+  AVAILABLE
+  OCCUPIED
+  MAINTENANCE
+}
+
 enum SurgeryStatus {
   PENDING
   IN_PROGRESS
@@ -64,10 +75,25 @@ enum SurgeryStatus {
   CANCELLED
 }
 
+// [NEW] Distinguishes scheduled vs emergency vs urgent surgeries
+enum SurgeryType {
+  SCHEDULED
+  EMERGENCY
+  URGENT
+}
+
+// [NEW] Tracks pre-op preparation task status
+enum PrepStatus {
+  PENDING
+  READY
+  FAILED
+}
+
 // ─── Users & Roles ───────────────────────────────────────────────────────────
 
 model User {
   id        String   @id @default(uuid())
+  ssn       String   @unique @default("0")
   name      String
   email     String   @unique
   phone     String
@@ -110,10 +136,13 @@ model Doctor {
   img            String?
   bio            String?
 
-  appointments    Appointment[]
-  visits          Visit[]
-  surgeries       Surgery[]
-  emergencyQueues EmergencyQueue[]
+  appointments       Appointment[]
+  visits             Visit[]
+  surgeries          Surgery[]
+  emergencyQueues    EmergencyQueue[]
+  // [MODIFIED] Replaced bare Availability with richer weekly schedule + exceptions
+  availability       Availability[]
+  scheduleExceptions ScheduleException[]
 
   createdAt DateTime @default(now())
 }
@@ -148,11 +177,49 @@ model Room {
   type         RoomType
   departmentId String
   department   Department @relation(fields: [departmentId], references: [id])
+  // [NEW] Real-time room occupancy status
+  status       RoomStatus @default(AVAILABLE)
 
   visits    Visit[]
   surgeries Surgery[]
 
   createdAt DateTime @default(now())
+}
+
+// ─── Availability & Scheduling ───────────────────────────────────────────────
+
+// [MODIFIED] Replaced the bare boolean Availability with a full weekly schedule model
+model Availability {
+  id       String  @id @default(uuid())
+  doctorId String
+  doctor   Doctor  @relation(fields: [doctorId], references: [id])
+
+  dayOfWeek     Int     // 0 = Sunday … 6 = Saturday
+  startTime     String  // "09:00"
+  endTime       String  // "17:00"
+  slotDuration  Int     @default(30) // minutes per appointment slot
+  isActive      Boolean @default(true)
+
+  createdAt DateTime @default(now())
+
+  @@unique([doctorId, dayOfWeek, startTime])
+}
+
+// [NEW] One-off overrides: vacation days, sick days, or extra availability
+model ScheduleException {
+  id       String @id @default(uuid())
+  doctorId String
+  doctor   Doctor @relation(fields: [doctorId], references: [id])
+
+  date      DateTime // the specific calendar date this exception applies to
+  isBlocked Boolean  @default(true) // true = unavailable, false = extra availability added
+  startTime String?  // only relevant when isBlocked = false
+  endTime   String?  // only relevant when isBlocked = false
+  reason    String?  // e.g. "Annual leave", "Conference", "Emergency cover"
+
+  createdAt DateTime @default(now())
+
+  @@unique([doctorId, date])
 }
 
 // ─── Appointments & Visits ───────────────────────────────────────────────────
@@ -170,7 +237,10 @@ model Appointment {
   type   AppointmentType
   status AppointmentStatus
 
-  scheduledAt DateTime
+  scheduledAt      DateTime
+  // [NEW] Duration needed to detect slot conflicts
+  durationMinutes  Int      @default(30)
+
   chatSession ChatSession?
 
   createdAt DateTime @default(now())
@@ -214,25 +284,58 @@ model EmergencyQueue {
 
 // ─── Surgery ─────────────────────────────────────────────────────────────────
 
+// [MODIFIED] Major overhaul — see modification listing below
 model Surgery {
   id        String  @id @default(uuid())
   patientId String
   patient   Patient @relation(fields: [patientId], references: [id])
   surgeonId String
   surgeon   Doctor  @relation(fields: [surgeonId], references: [id])
-  roomId    String
-  room      Room    @relation(fields: [roomId], references: [id])
 
-  // link back to the emergency queue entry that triggered this (if any)
-  emergencyQueueId String?        @unique
+  // [MODIFIED] roomId is now nullable — emergency surgeries grab a room on the fly
+  roomId String?
+  room   Room?   @relation(fields: [roomId], references: [id])
+
+  emergencyQueueId String?         @unique
   emergencyQueue   EmergencyQueue? @relation(fields: [emergencyQueueId], references: [id])
 
-  status    SurgeryStatus
-  notes     String?
+  // [NEW] Explicit surgery type instead of inferring from scheduledAt being null
+  type   SurgeryType
+  status SurgeryStatus
 
-  scheduledAt DateTime? // null = unscheduled / emergency surgery
-  startedAt   DateTime?
-  endedAt     DateTime?
+  // [NEW] Priority pulled from existing enum — useful for URGENT triage ranking
+  priority Priority?
+
+  notes String?
+
+  // Timing — all nullable to support unscheduled/emergency cases
+  scheduledAt       DateTime? // null for emergency surgeries
+  // [NEW] Estimated duration for room conflict detection
+  estimatedDuration Int?      // minutes
+  startedAt         DateTime?
+  endedAt           DateTime?
+
+  // [NEW] Audit trail — who ordered and who approved this surgery
+  requestedBy String? // doctorId
+  approvedBy  String? // adminId or senior doctorId
+
+  // [NEW] Pre-op preparation tasks (only meaningful for SCHEDULED / URGENT)
+  prepTasks SurgeryPrep[]
+
+  createdAt DateTime @default(now())
+}
+
+// [NEW] Pre-operative preparation checklist per surgery
+model SurgeryPrep {
+  id        String  @id @default(uuid())
+  surgeryId String
+  surgery   Surgery @relation(fields: [surgeryId], references: [id])
+
+  task        String     // e.g. "Blood work", "Anesthesia consult", "Patient fasting"
+  status      PrepStatus @default(PENDING)
+  assignedTo  String?    // nurseId or doctorId responsible for this task
+  dueAt       DateTime?
+  completedAt DateTime?
 
   createdAt DateTime @default(now())
 }

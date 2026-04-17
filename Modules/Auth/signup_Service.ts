@@ -24,7 +24,8 @@ export async function userSignup(req :Request , res : Response){
         password:req.body.password,
         age : req.body.age,
         gender :req.body.gender,
-        phone:req.body.phone 
+        phone:req.body.phone ,
+        ssn :req.body.ssn
     }
     try{
     const newuser = await saveUser(user) ; 

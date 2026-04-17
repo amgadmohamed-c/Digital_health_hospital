@@ -26,5 +26,6 @@ Content-Type: application/json
     "email": "mohamedamgad23@gmail.com",
     "password": "123456789",
     "age": 21,
-    "phone": "01157174086"
+    "phone": "01157174086" , 
+    "ssn " : 123456789 
 }
