@@ -28,7 +28,7 @@ export async function adminDeleteUser(req:Request,res:Response) {
            return res.status(400).json({err:"user id is undefined"});
         } 
         const deletedUser  = await DeleteUser(id);
-        return res.status(204);
+        return res.status(200).send({message :"user deleted"});
 
 
     }catch(Err:any){

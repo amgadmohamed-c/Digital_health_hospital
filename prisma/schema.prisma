@@ -1,32 +1,27 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
   provider = "prisma-client-js"
   output   = "../generated/prisma"
-
-
-
 }
+
 datasource db {
   provider = "postgresql"
-
-
 }
-enum Role{
-  PATIENT 
+
+enum Role {
+  PATIENT
   DOCTOR
   NURSE
   ADMIN
-
 }
 
-enum Gender{
+enum Gender {
   MALE
-  FEMALE 
+  FEMALE
 }
+
 enum AppointmentType {
   HOSPITAL
   ONLINE
@@ -38,6 +33,7 @@ enum AppointmentStatus {
   COMPLETED
   CANCELLED
 }
+
 enum Priority {
   LOW
   MEDIUM
@@ -50,203 +46,250 @@ enum QueueStatus {
   IN_PROGRESS
   DONE
 }
+
 enum SenderType {
   DOCTOR
   PATIENT
 }
+
 enum RoomType {
   SURGERY
   EMERGENCY
 }
-model User {
-  id String @id @default(uuid())
-  name String 
-  email String @unique
-  phone String
-  gender Gender @default(MALE)
-  age Int 
-  password String 
 
-
-
-  role Role @default(PATIENT)
-  create_at DateTime @default(now())  
-  patient Patient?
-  doctor Doctor?
-  nurse Nurse?
-
+enum SurgeryStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
 }
 
-model Patient{
-  id String @id @default(uuid())
-  userId      String   @unique
-  user        User     @relation(fields: [userId], references: [id])
+// ─── Users & Roles ───────────────────────────────────────────────────────────
+
+model User {
+  id        String   @id @default(uuid())
+  name      String
+  email     String   @unique
+  phone     String
+  gender    Gender   @default(MALE)
+  age       Int
+  password  String
+  role      Role     @default(PATIENT)
+  create_at DateTime @default(now())
+
+  patient Patient?
+  doctor  Doctor?
+  nurse   Nurse?
+}
+
+model Patient {
+  id        String  @id @default(uuid())
+  userId    String  @unique
+  user      User    @relation(fields: [userId], references: [id])
   bloodtype String?
   allergies String?
-  img String?
+  img       String?
 
-  visits      Visit[]
-  appointments Appointment[]
-  records     MedicalRecord[]
+  visits          Visit[]
+  appointments    Appointment[]
+  records         MedicalRecord[]
   emergencyQueues EmergencyQueue[]
-  vitals      Vital[] // Added relation field for Vital
-
-  createdAt   DateTime @default(now())
-
-}
-model Doctor{
-  id String @id @default(uuid())
-  userId      String   @unique
-  user        User     @relation(fields: [userId], references: [id])
-  specialization String
-  departmentId  String
-  department    Department @relation(fields: [departmentId], references: [id])
-  appointments  Appointment[]
-  visits        Visit[]
-  img String?
-  bio String?
-
-
-  createdAt     DateTime @default(now())
-
-} 
-model Nurse {
-  id String @id @default(uuid())
-
-  userId String @unique
-  user User @relation(fields: [userId], references: [id])
-
-  departmentId String
-  department Department @relation(fields: [departmentId], references: [id])
+  vitals          Vital[]
+  surgeries       Surgery[]
 
   createdAt DateTime @default(now())
 }
 
-model Department{
-  id String @id @default(uuid())
-  name String @unique
-  doctors Doctor[]
-  visits    Visit[]
-  appointments Appointment[]
-  nurses Nurse[]
+model Doctor {
+  id             String     @id @default(uuid())
+  userId         String     @unique
+  user           User       @relation(fields: [userId], references: [id])
+  specialization String
+  departmentId   String
+  department     Department @relation(fields: [departmentId], references: [id])
+  img            String?
+  bio            String?
+
+  appointments    Appointment[]
+  visits          Visit[]
+  surgeries       Surgery[]
   emergencyQueues EmergencyQueue[]
 
-
-  rooms Room[]
+  createdAt DateTime @default(now())
 }
-model Appointment {
-  id            String   @id @default(uuid())
 
-  patientId     String
-  doctorId      String
-  departmentId  String
-
-  patient       Patient   @relation(fields: [patientId], references: [id])
-  doctor        Doctor    @relation(fields: [doctorId], references: [id])
-  department    Department @relation(fields: [departmentId], references: [id])
-
-  type          AppointmentType
-  status        AppointmentStatus
-
-  scheduledAt   DateTime
-
-  chatSession   ChatSession?
-
-  createdAt     DateTime @default(now())
-}
-model Visit {
-  id            String   @id @default(uuid())
-
-  patientId     String
-  doctorId      String
-  departmentId  String
-  roomId        String? // Added for Room relation
-
-  patient       Patient   @relation(fields: [patientId], references: [id])
-  doctor        Doctor    @relation(fields: [doctorId], references: [id])
-  department    Department @relation(fields: [departmentId], references: [id])
-  room          Room?     @relation(fields: [roomId], references: [id]) // Added relation
-
-  diagnosis     String?
-  notes         String?
-
-  createdAt     DateTime @default(now())
-}
-model EmergencyQueue {
-  id         String   @id @default(uuid())
-
-  patientId  String
-  patient    Patient  @relation(fields: [patientId], references: [id])
-
-  priority   Priority
-  status     QueueStatus
+model Nurse {
+  id           String     @id @default(uuid())
+  userId       String     @unique
+  user         User       @relation(fields: [userId], references: [id])
   departmentId String
-  department Department @relation(fields: [departmentId], references: [id]) 
+  department   Department @relation(fields: [departmentId], references: [id])
 
-  arrivalTime DateTime @default(now())
+  createdAt DateTime @default(now())
 }
-model ChatSession {
-  id            String   @id @default(uuid())
 
-  appointmentId String   @unique
+// ─── Departments & Rooms ─────────────────────────────────────────────────────
+
+model Department {
+  id   String @id @default(uuid())
+  name String @unique
+
+  doctors         Doctor[]
+  nurses          Nurse[]
+  visits          Visit[]
+  appointments    Appointment[]
+  emergencyQueues EmergencyQueue[]
+  rooms           Room[]
+}
+
+model Room {
+  id           String     @id @default(uuid())
+  name         String
+  type         RoomType
+  departmentId String
+  department   Department @relation(fields: [departmentId], references: [id])
+
+  visits    Visit[]
+  surgeries Surgery[]
+
+  createdAt DateTime @default(now())
+}
+
+// ─── Appointments & Visits ───────────────────────────────────────────────────
+
+model Appointment {
+  id           String @id @default(uuid())
+  patientId    String
+  doctorId     String
+  departmentId String
+
+  patient    Patient    @relation(fields: [patientId], references: [id])
+  doctor     Doctor     @relation(fields: [doctorId], references: [id])
+  department Department @relation(fields: [departmentId], references: [id])
+
+  type   AppointmentType
+  status AppointmentStatus
+
+  scheduledAt DateTime
+  chatSession ChatSession?
+
+  createdAt DateTime @default(now())
+}
+
+model Visit {
+  id           String  @id @default(uuid())
+  patientId    String
+  doctorId     String
+  departmentId String
+  roomId       String?
+
+  patient    Patient    @relation(fields: [patientId], references: [id])
+  doctor     Doctor     @relation(fields: [doctorId], references: [id])
+  department Department @relation(fields: [departmentId], references: [id])
+  room       Room?      @relation(fields: [roomId], references: [id])
+
+  diagnosis String?
+  notes     String?
+
+  createdAt DateTime @default(now())
+}
+
+// ─── Emergency ───────────────────────────────────────────────────────────────
+
+model EmergencyQueue {
+  id           String     @id @default(uuid())
+  patientId    String
+  patient      Patient    @relation(fields: [patientId], references: [id])
+  doctorId     String?
+  doctor       Doctor?    @relation(fields: [doctorId], references: [id])
+  departmentId String
+  department   Department @relation(fields: [departmentId], references: [id])
+
+  priority    Priority
+  status      QueueStatus
+  arrivalTime DateTime    @default(now())
+
+  surgery Surgery?
+}
+
+// ─── Surgery ─────────────────────────────────────────────────────────────────
+
+model Surgery {
+  id        String  @id @default(uuid())
+  patientId String
+  patient   Patient @relation(fields: [patientId], references: [id])
+  surgeonId String
+  surgeon   Doctor  @relation(fields: [surgeonId], references: [id])
+  roomId    String
+  room      Room    @relation(fields: [roomId], references: [id])
+
+  // link back to the emergency queue entry that triggered this (if any)
+  emergencyQueueId String?        @unique
+  emergencyQueue   EmergencyQueue? @relation(fields: [emergencyQueueId], references: [id])
+
+  status    SurgeryStatus
+  notes     String?
+
+  scheduledAt DateTime? // null = unscheduled / emergency surgery
+  startedAt   DateTime?
+  endedAt     DateTime?
+
+  createdAt DateTime @default(now())
+}
+
+// ─── Chat ────────────────────────────────────────────────────────────────────
+
+model ChatSession {
+  id            String      @id @default(uuid())
+  appointmentId String      @unique
   appointment   Appointment @relation(fields: [appointmentId], references: [id])
 
-  messages      Message[]
-
-  startedAt     DateTime?
-  endedAt       DateTime?
+  messages  Message[]
+  startedAt DateTime?
+  endedAt   DateTime?
 }
-model Message {
-  id         String   @id @default(uuid())
 
+model Message {
+  id         String      @id @default(uuid())
   sessionId  String
   session    ChatSession @relation(fields: [sessionId], references: [id])
-
   senderId   String
   senderType SenderType
-
   content    String
 
-  createdAt  DateTime @default(now())
+  createdAt DateTime @default(now())
 }
+
+// ─── Medical Data ────────────────────────────────────────────────────────────
+
 model MedicalRecord {
   id        String   @id @default(uuid())
-
   patientId String
   patient   Patient  @relation(fields: [patientId], references: [id])
-
   title     String
   fileUrl   String[]
 
   createdAt DateTime @default(now())
 }
+
 model Vital {
-  id String @id @default(uuid())
-
+  id        String  @id @default(uuid())
   patientId String
-  patient Patient @relation(fields: [patientId], references: [id])
+  patient   Patient @relation(fields: [patientId], references: [id])
 
-  heartRate Int?
+  heartRate     Int?
   bloodPressure String?
-  temperature Float?
+  temperature   Float?
 
   recordedAt DateTime @default(now())
 }
-model Room {
-  id          String   @id @default(uuid())
-  name        String   // e.g., "Surgery Room 1" or "ER 5"
-  type        RoomType
-  departmentId String
-  department  Department @relation(fields: [departmentId], references: [id])
 
-  visits      Visit[]      // which visits happened in this room
-  createdAt   DateTime     @default(now())
-}
+// ─── Auth ────────────────────────────────────────────────────────────────────
 
 model RefreshToken {
-  id    String   @id @default(uuid())
-  token String   @unique
-  userId String
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String
   expiresAt DateTime
   createdAt DateTime @default(now())
 }

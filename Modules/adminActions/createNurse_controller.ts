@@ -18,8 +18,8 @@ export async function adminCreatenurse(req:Request,res:Response) {
         
 
     try{
-        const isadmin = await isAdmin(req.user.toString());
-
+        const { email } = req.user as JwtPayload;
+        const isadmin = await isAdmin(email);
         const data = {
                 name : req.body.name , 
                 email:req.body.email , 

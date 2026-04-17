@@ -11,8 +11,9 @@ declare global {
 }
 export default  async function getDoctor(req:Request , res: Response){
     try{
-        
+        if (!req.user) return res.status(401).json({ err: "Unauthorized" });
         const {email} = req.user as JwtPayload ; 
+        
         if(!email){
             throw new Error("no email was sent");
         }
