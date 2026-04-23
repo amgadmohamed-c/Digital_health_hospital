@@ -48,7 +48,10 @@ export async function saveUser(user:CreateUserInput){
         title: "Initial Record",
         fileUrl: []
     }
+    
 })
+
+       return patient
     }
     catch(error){
      if (error instanceof Error) {

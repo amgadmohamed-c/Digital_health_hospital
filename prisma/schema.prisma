@@ -93,7 +93,7 @@ enum PrepStatus {
 
 model User {
   id        String   @id @default(uuid())
-  ssn       String   @unique @default("0")
+  ssn       String   @default("0")
   name      String
   email     String   @unique
   phone     String
@@ -301,7 +301,7 @@ model Surgery {
 
   // [NEW] Explicit surgery type instead of inferring from scheduledAt being null
   type   SurgeryType
-  status SurgeryStatus
+  surgeryStatus SurgeryStatus
 
   // [NEW] Priority pulled from existing enum — useful for URGENT triage ranking
   priority Priority?
