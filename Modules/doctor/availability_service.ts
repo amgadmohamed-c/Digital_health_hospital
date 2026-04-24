@@ -34,9 +34,26 @@ export default async function getAvailableTime(drId: string): Promise<TimeSlot[]
             scheduledAt: { gte: startOfDay, lte: endOfDay }
         }
     });
+    const surgeries = await prisma.surgery.findMany({
+       where: {
+          surgeonId: drId,
+          surgeryStatus: { notIn: ["CANCELLED", "COMPLETED"] },
+          scheduledAt: { gte: startOfDay, lte: endOfDay }
+    }
+});
+
+// Normalize surgeries into the same shape as appointments
+     const surgeryBlocks = surgeries
+        .filter(s => s.scheduledAt && s.estimatedDuration)
+        .map(s => ({
+        scheduledAt: s.scheduledAt!,
+        durationMinutes: s.estimatedDuration!
+    }));
+    const allBlocks = [...booked, ...surgeryBlocks];
+
 
     // ✅ handles all availability windows, not just the last one
-    return windows.flatMap(w => generateSlots(w.startTime, w.endTime, w.slotDuration, booked));
+    return windows.flatMap(w => generateSlots(w.startTime, w.endTime, w.slotDuration, allBlocks));
 }
 
 function generateSlots(

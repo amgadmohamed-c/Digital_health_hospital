@@ -6,4 +6,4 @@ import doctorCancelAppointment from "./cancelAppointment_controller";
 const router:  Router = express.Router();
 router.get("/available/appointment/slots" , doctorSlots);
 router.post("/new/appointment" , appointmentBook);
-router.patch("/cancel/appointments" , doctorCancelAppointment);
+router.patch("/cancel/appointment" , doctorCancelAppointment);
