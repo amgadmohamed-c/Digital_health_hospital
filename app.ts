@@ -6,6 +6,7 @@ import { router as adminActions } from "./Modules/adminActions/admin_router";
 import { Authenticate_Token } from "./Modules/Auth/login_Controller";
 import { router as patientProfile } from "./Modules/patientProfile/PatientProfile_router";
 import { router as doctorProfile } from "./Modules/doctorProfile/DoctorProfile_router";
+import { router as emergency } from "./Modules/emergency/emergencyRouter";
 
 const app = express();
 app.use(express.json());
@@ -18,4 +19,5 @@ app.use(Authenticate_Token as RequestHandler)
 app.use(doctorProfile);
 app.use(patientProfile );
 app.use(adminActions);
+app.use(emergency);
 app.listen(8000);
