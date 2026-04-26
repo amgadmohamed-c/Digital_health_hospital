@@ -238,6 +238,7 @@ model Appointment {
   status AppointmentStatus
 
   scheduledAt      DateTime
+  endsAt           DateTime
   // [NEW] Duration needed to detect slot conflicts
   durationMinutes  Int      @default(30)
 

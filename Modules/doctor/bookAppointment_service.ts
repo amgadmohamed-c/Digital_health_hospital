@@ -7,7 +7,7 @@ type appointmentDataType = {
     appointmentType : AppointmentType ,
     schuledAt : Date , 
     appointmentStatus: AppointmentStatus ,
-    duration? : number 
+    duration : number ,
 
 }
 export default async function saveAppointment(appointmentData :appointmentDataType){
@@ -30,6 +30,7 @@ export default async function saveAppointment(appointmentData :appointmentDataTy
         if(!department){
             throw new Error("department doesnt exist");
         }
+        const endsAt = new Date(appointmentData.schuledAt.getTime() + appointmentData.duration * 60000);   
         const newAppointment= await prisma.appointment.create({
             data:{
                 patientId : user?.patient?.id , 
@@ -38,7 +39,8 @@ export default async function saveAppointment(appointmentData :appointmentDataTy
                 status :appointmentData.appointmentStatus , 
                 type:appointmentData.appointmentType,
                 ...(appointmentData.duration && {durationMinutes : appointmentData.duration}) , 
-                departmentId:department.id
+                departmentId:department.id,
+                endsAt : endsAt
                 
             }
         })

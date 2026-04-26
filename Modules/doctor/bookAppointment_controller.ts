@@ -27,7 +27,7 @@ export default async function appointmentBook(req:Request , res : Response){
             schuledAt : req.body.scheduledAt , 
             appointmentStatus :req.body.appintmentStatus , 
             appointmentType : req.body.appointmentType , 
-            duration : req.body.duration
+            duration : req.body.duration,
 
         }
         const appointment = saveAppointment(data);

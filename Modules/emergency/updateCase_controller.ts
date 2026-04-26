@@ -24,6 +24,9 @@ export default async function updateCaseData(req:Request  , res:Response) {
 
             }
             const staff =  await isStaff(email);
+            if(!staff){
+                return res.status(403).json({ err: "Forbidden: staff only" });
+            }            
             const data =  await updateCase(newdata);
             return res.status(200).json(data);
         }catch(err:any){

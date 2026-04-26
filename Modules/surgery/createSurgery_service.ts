@@ -7,13 +7,12 @@ type surgeryDataType ={
   roomId    : string,
   emergencyQueueId? : string 
   type      :  SurgeryType , 
-  surgeryStatus : SurgeryStatus , 
   priority ? :  Priority,
   notes  ?   : string,
   scheduledAt : Date , 
-  estimatedDuration ? : number , 
+  estimatedDuration  : number , 
   startedAt :   Date ,
-  endedAt   : Date ,
+
 
 
 
@@ -23,6 +22,7 @@ type surgeryDataType ={
 
 export default async function saveSurgery(surgeryData:surgeryDataType) {
     try{
+        const endedAt = new Date(surgeryData.startedAt.getTime()+ surgeryData.estimatedDuration * 60000);
         const surgery = await prisma.surgery.create({
             data:{
                 surgeonId : surgeryData.surgeonId ,
@@ -30,15 +30,25 @@ export default async function saveSurgery(surgeryData:surgeryDataType) {
                 roomId : surgeryData.roomId , 
                 ...(surgeryData.emergencyQueueId && {emergencyQueueId:surgeryData.emergencyQueueId}),
                 type : surgeryData.type,
-                status : surgeryData.surgeryStatus ,
-                ...(surgeryData.priority && {priority : surgeryData.priority})
+                surgeryStatus : "PENDING" ,
+                ...(surgeryData.priority && {priority : surgeryData.priority}),
+                requestedBy : surgeryData.surgeonId,
+                scheduledAt : surgeryData.scheduledAt , 
+                startedAt   : surgeryData.startedAt , 
+                endedAt     : endedAt,
+                // ✅ Fix — add these to the data object
+                ...(surgeryData.notes && { notes: surgeryData.notes }),
+                ...(surgeryData.estimatedDuration && { estimatedDuration: surgeryData.estimatedDuration }),
             }
         })
         if(!surgery){
             throw new Error("surgery creation faild") // to do today 
         }
+        return surgery  ; 
     }
     catch(err:any){
+        console.log(err.message);
+        throw new Error(err.message);
 
     }
     

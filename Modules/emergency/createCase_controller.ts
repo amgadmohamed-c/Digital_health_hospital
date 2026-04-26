@@ -11,7 +11,10 @@ export default async function createCase(req:Request , res : Response ) {
     }
     const {email} = req.user as JwtPayload ; 
     try{
-        const Staff = await isStaff(email) ; 
+        const staff = await isStaff(email) ;
+        if(!staff){
+             return res.status(403).json({ err: "Forbidden: staff only" });
+         }
         if(!req.body.patientId ){
             const data  = {
                 email : `${req.body.ssn}@gmail.com` , 
