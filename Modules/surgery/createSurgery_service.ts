@@ -12,6 +12,7 @@ type surgeryDataType ={
   scheduledAt : Date , 
   estimatedDuration  : number , 
   startedAt :   Date ,
+  
 
 
 
@@ -23,6 +24,7 @@ type surgeryDataType ={
 export default async function saveSurgery(surgeryData:surgeryDataType) {
     try{
         const endedAt = new Date(surgeryData.startedAt.getTime()+ surgeryData.estimatedDuration * 60000);
+        
         const surgery = await prisma.surgery.create({
             data:{
                 surgeonId : surgeryData.surgeonId ,

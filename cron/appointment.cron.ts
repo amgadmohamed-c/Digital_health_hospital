@@ -1,9 +1,9 @@
 import cron from 'node-cron';
 import prisma from '../Modules/lib/prisma';
 
-cron.schedule("*/15 * * * *" ,  async () =>{
+cron.schedule("*/5 * * * *" ,  async () =>{
     const now = new Date();
-    const data = await prisma.appointment.updateMany({
+     await prisma.appointment.updateMany({
         where:{
             status:"SCHEDULED",
             scheduledAt:{
