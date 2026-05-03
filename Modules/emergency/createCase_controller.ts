@@ -1,50 +1,57 @@
 import { Request, Response } from "express";
-import {  isStaff }  from "./createCase_service";
+import { isStaff } from "./createCase_service";
 import createEmergencyCase from "./createCase_service";
 import { JwtPayload } from "jsonwebtoken";
-import { Priority } from "@prisma/client";
 
+export default async function createCase(req: Request, res: Response) {
+  if (!req.user) {
+    return res.status(401).json({ error: "Unauthorized" });
+  }
 
-export default async function createCase(req:Request , res : Response ) {
-    if(!req.user){
-        return res.status(401).json({error : "user not defined"});
+  const { email } = req.user as JwtPayload;
+
+  try {
+    const staff = await isStaff(email);
+    if (!staff || (!staff.doctor && !staff.nurse)) {
+      return res.status(403).json({ error: "Forbidden: staff only" });
     }
-    const {email} = req.user as JwtPayload ; 
-    try{
-        const staff = await isStaff(email) ;
-        if(!staff){
-             return res.status(403).json({ err: "Forbidden: staff only" });
-         }
-        if(!req.body.patientId ){
-            const data  = {
-                email : `${req.body.ssn}@gmail.com` , 
-                password : "0000" , 
-                name : "ePatient" , 
-                phone : "1234" , 
-                age : 20 , 
-                ssn : req.body.ssn , 
-                gender : req.body.Gender  , 
-                doctorId : req.body.doctorId  , 
-                department : req.body.department , 
-                priority : req.body.priority, 
-            }
-            const emergency = await createEmergencyCase(data) ; 
 
-            return res.status(201).json({message : "case was created succesfully"}); 
-        }
-             const data  = { 
-                email  : req.body.email , 
-                doctorId : req.body.doctorId  , 
-                department : req.body.department , 
-                priority : req.body.priority, 
-            }
-            const emergency = await createEmergencyCase(data);
+    const { patientEmail, ssn, gender, doctorId, department, priority } = req.body;
 
-            return res.status(201).json({message : "case was created succesfully"}); 
+    if (!department) return res.status(400).json({ error: "Department is required" });
+    if (!priority) return res.status(400).json({ error: "Priority is required" });
 
+    let emergency;
 
-    }catch(err:any){
-        return res.status(400).json({err : err.message});
+    if (!patientEmail) {
+      // Walk-in patient
+      if (!ssn) return res.status(400).json({ error: "SSN is required for walk-in patients" });
+
+      emergency = await createEmergencyCase({
+        email: `${ssn}@hospital.internal`,
+        password: "0000",
+        name: "Walk-in Patient",
+        phone: "0000000000",
+        age: 0,
+        ssn,
+        gender,
+        doctorId,
+        department,
+        priority,
+      });
+    } else {
+      // Existing patient by email
+      emergency = await createEmergencyCase({
+        email: patientEmail,
+        doctorId,
+        department,
+        priority,
+      });
     }
-    
+
+    return res.status(201).json({ message: "Case created successfully", caseId: emergency.id });
+
+  } catch (err: any) {
+    return res.status(400).json({ error: err.message });
+  }
 }
