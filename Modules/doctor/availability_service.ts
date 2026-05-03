@@ -20,7 +20,7 @@ export default async function getAvailableTime(drId: string): Promise<TimeSlot[]
     if (!doctor) throw new Error("Doctor not found");
 
     const windows = await prisma.availability.findMany({
-        where: { doctorId: drId, dayOfWeek: now.getDay(), isActive: true }
+        where: { doctorId: drId, dayOfWeek: now.getDay() , isActive: true }
     });
     if (windows.length === 0) throw new Error("No availability found for today");
 
