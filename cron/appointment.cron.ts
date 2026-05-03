@@ -1,8 +1,11 @@
 import cron from 'node-cron';
 import prisma from '../Modules/lib/prisma';
-
+import { closeChatSession } from '../Modules/chat/chatSession_service';
+import { closeSocketSession } from '../Modules/chat/chat_socket';
 cron.schedule("*/3 * * * *", async () => {
   const now = new Date();
+  // Inside your existing cron, after marking appointments COMPLETED:
+ 
 
   await prisma.$transaction(async (tx) => {
     // 1. Activate scheduled appointments
@@ -70,6 +73,10 @@ cron.schedule("*/3 * * * *", async () => {
       const roomIds = expiredAppointments
         .map(appt => appt.visit?.roomId)
         .filter(Boolean) as string[];
+         for (const appt of expiredAppointments) {
+        const sessionId = await closeChatSession(appt.id); // close in DB
+        if (sessionId) closeSocketSession(sessionId);       // kick all sockets
+}
 
       if (roomIds.length > 0) {
         await tx.room.updateMany({
@@ -86,4 +93,9 @@ cron.schedule("*/3 * * * *", async () => {
       });
     }
   });
-});
+  
+
+  
+}
+
+);
