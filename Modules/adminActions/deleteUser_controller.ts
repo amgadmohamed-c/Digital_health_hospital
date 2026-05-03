@@ -20,15 +20,15 @@ export async function adminDeleteUser(req:Request,res:Response) {
         const {email}  = req.user as JwtPayload;
         console.log(email)
         const isadmin = await isAdmin(email);
-        if(isadmin != true){
-            throw new Error("user is not admin")
+        if(!isadmin){
+            return res.status(403).json({ err: "Forbidden: admin only" });
         }
         const id = req.params.id ; 
         if(!id || Array.isArray(id)){
            return res.status(400).json({err:"user id is undefined"});
         } 
         const deletedUser  = await DeleteUser(id);
-        return res.status(200).send({message :"user deleted"});
+        return res.status(200).send({message :"user deleted" , user:deletedUser});
 
 
     }catch(Err:any){

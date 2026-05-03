@@ -16,25 +16,19 @@ type doctor = {
 
 }
 export async function isAdmin(email:string){
-    try{
+    
         const admin = await prisma.user.findUnique(
             {
                 where:{
                     email:email , 
                     role:"ADMIN"
                 }
-
             }
         )
         if(!admin){
-            throw new Error("user is not an admin ");
+            return null
         }
         return true
-    }
-    catch(Err:any){
-        throw new Error(Err.message || "user is not admin")
-    }
-
 }
 
 export default  async function createDoctor(doctorData:doctor){

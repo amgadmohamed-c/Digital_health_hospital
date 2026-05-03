@@ -16,6 +16,9 @@ export default async function allDoctorsData(req:Request , res : Response) {
     }
     try{
         const admin = await isAdmin(email);
+        if(!admin){
+            return res.status(403).json({ err: "Forbidden: admin only" });
+        }
         const data = await getAllDoctors();
         return res.status(200).json(data);
         
