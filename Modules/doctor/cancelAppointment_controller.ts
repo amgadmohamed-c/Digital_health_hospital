@@ -12,6 +12,9 @@ export default async function doctorCancelAppointment(req:Request , res : Respon
     try{
         const staff = await isStaff(email);
         console.log(staff);
+        if(!staff){
+             return res.status(403).json({ err: "Forbidden: staff only" });
+         }
         const data = {
             appointmentId: req.body.id , 
             appointmentStatus : req.body.appintmentStatus
