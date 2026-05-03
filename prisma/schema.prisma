@@ -194,7 +194,7 @@ model Availability {
   doctorId String
   doctor   Doctor  @relation(fields: [doctorId], references: [id])
 
-  dayOfWeek     Int     // 0 = Sunday … 6 = Saturday
+  dayOfWeek     Int   // 0 = Sunday … 6 = Saturday
   startTime     String  // "09:00"
   endTime       String  // "17:00"
   slotDuration  Int     @default(30) // minutes per appointment slot
