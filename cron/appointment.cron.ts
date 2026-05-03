@@ -1,7 +1,7 @@
 import cron from 'node-cron';
 import prisma from '../Modules/lib/prisma';
 
-cron.schedule("*/5 * * * *", async () => {
+cron.schedule("*/3 * * * *", async () => {
   const now = new Date();
 
   await prisma.$transaction(async (tx) => {
