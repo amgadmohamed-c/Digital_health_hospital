@@ -1,57 +1,44 @@
 import prisma from "../lib/prisma";
-import { Priority, SurgeryStatus, SurgeryType } from "../../generated/prisma";
+import { Priority, SurgeryType } from "../../generated/prisma";
 
-type surgeryDataType ={
-  patientId : string,
-  surgeonId : string,
-  roomId    : string,
-  emergencyQueueId? : string 
-  type      :  SurgeryType , 
-  priority ? :  Priority,
-  notes  ?   : string,
-  scheduledAt : Date , 
-  estimatedDuration  : number , 
-  startedAt :   Date ,
-  
+type SurgeryDataType = {
+  patientId: string;
+  surgeonId: string;
+  roomId?: string;          // optional — emergency grabs room later
+  emergencyQueueId?: string;
+  type: SurgeryType;
+  priority?: Priority;
+  notes?: string;
+  scheduledAt?: Date;       // optional — null for emergency
+  estimatedDuration?: number;
+  requestedBy?: string;
+}
 
+export default async function saveSurgery(surgeryData: SurgeryDataType) {
+  // Validate based on type
+  if (surgeryData.type === "SCHEDULED" && !surgeryData.scheduledAt) {
+    throw new Error("scheduledAt is required for scheduled surgeries");
+  }
+  if (surgeryData.type === "EMERGENCY" && surgeryData.scheduledAt) {
+    throw new Error("Emergency surgeries cannot have a scheduledAt");
+  }
 
-
-
-
-} 
-
-
-export default async function saveSurgery(surgeryData:surgeryDataType) {
-    try{
-        const endedAt = new Date(surgeryData.startedAt.getTime()+ surgeryData.estimatedDuration * 60000);
-        
-        const surgery = await prisma.surgery.create({
-            data:{
-                surgeonId : surgeryData.surgeonId ,
-                patientId : surgeryData.patientId ,
-                roomId : surgeryData.roomId , 
-                ...(surgeryData.emergencyQueueId && {emergencyQueueId:surgeryData.emergencyQueueId}),
-                type : surgeryData.type,
-                surgeryStatus : "PENDING" ,
-                ...(surgeryData.priority && {priority : surgeryData.priority}),
-                requestedBy : surgeryData.surgeonId,
-                scheduledAt : surgeryData.scheduledAt , 
-                startedAt   : surgeryData.startedAt , 
-                endedAt     : endedAt,
-                // ✅ Fix — add these to the data object
-                ...(surgeryData.notes && { notes: surgeryData.notes }),
-                ...(surgeryData.estimatedDuration && { estimatedDuration: surgeryData.estimatedDuration }),
-            }
-        })
-        if(!surgery){
-            throw new Error("surgery creation faild") // to do today 
-        }
-        return surgery  ; 
+  const surgery = await prisma.surgery.create({
+    data: {
+      patientId: surgeryData.patientId,
+      surgeonId: surgeryData.surgeonId,
+      ...(surgeryData.roomId && { roomId: surgeryData.roomId }),
+      ...(surgeryData.emergencyQueueId && { emergencyQueueId: surgeryData.emergencyQueueId }),
+      type: surgeryData.type,
+      surgeryStatus: "PENDING",
+      ...(surgeryData.priority && { priority: surgeryData.priority }),
+      ...(surgeryData.notes && { notes: surgeryData.notes }),
+      ...(surgeryData.scheduledAt && { scheduledAt: surgeryData.scheduledAt }),
+      ...(surgeryData.estimatedDuration && { estimatedDuration: surgeryData.estimatedDuration }),
+      requestedBy: surgeryData.requestedBy ?? surgeryData.surgeonId,
+      // startedAt and endedAt are NOT set here — updated when surgery actually begins
     }
-    catch(err:any){
-        console.log(err.message);
-        throw new Error(err.message);
+  });
 
-    }
-    
+  return surgery;
 }
