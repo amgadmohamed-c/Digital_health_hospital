@@ -229,10 +229,12 @@ model Appointment {
   patientId    String
   doctorId     String
   departmentId String
+  
 
   patient    Patient    @relation(fields: [patientId], references: [id])
   doctor     Doctor     @relation(fields: [doctorId], references: [id])
   department Department @relation(fields: [departmentId], references: [id])
+  visit      Visit?     
 
   type   AppointmentType
   status AppointmentStatus
@@ -252,12 +254,16 @@ model Visit {
   patientId    String
   doctorId     String
   departmentId String
+  appointmentId String?  @unique
   roomId       String?
+
 
   patient    Patient    @relation(fields: [patientId], references: [id])
   doctor     Doctor     @relation(fields: [doctorId], references: [id])
   department Department @relation(fields: [departmentId], references: [id])
   room       Room?      @relation(fields: [roomId], references: [id])
+  appointment   Appointment? @relation(fields: [appointmentId], references: [id])
+
 
   diagnosis String?
   notes     String?
