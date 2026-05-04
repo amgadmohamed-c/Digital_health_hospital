@@ -7,16 +7,21 @@ import { Authenticate_Token } from "./Modules/Auth/login_Controller";
 import { router as patientProfile } from "./Modules/patientProfile/PatientProfile_router";
 import { router as doctorProfile } from "./Modules/doctorProfile/DoctorProfile_router";
 import { router as emergency } from "./Modules/emergency/emergencyRouter";
+import fetchRoute from "./Modules/fetchedUiData/fetch_router";
 import { initSocketServer } from "./Modules/chat/chat_socket";
 import chatRoute from "./Modules/chat/chat_route";
+import cors from "cors";
 
 const app = express();
 app.use(express.json());
+app.use(cors())
+
 
 app.use("/uploads", express.static("./upload"));
 
 app.use(authroutes);
 app.use(loginroutes);
+app.use(fetchRoute);
 app.use(Authenticate_Token as RequestHandler);
 app.use(doctorProfile);
 app.use(patientProfile);
