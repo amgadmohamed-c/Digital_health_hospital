@@ -29,12 +29,12 @@ export async function userSignup(req :Request , res : Response){
     }
     try{
     const newuser = await saveUser(user) ; 
-    return res.status(201).json("user created succefully");
+    return res.status(201).json({ message: "user created successfully" });
     }
     catch(error ){
           if (error instanceof Error) {
      console.log(error.message);
-     return res.status(409).json("user already exist");
+     return res.status(409).json({ message: "user already exist" });
     }
 }
 

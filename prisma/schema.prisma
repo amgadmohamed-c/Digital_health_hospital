@@ -375,7 +375,7 @@ model Message {
 model MedicalRecord {
   id        String   @id @default(uuid())
   patientId String
-  patient   Patient  @relation(fields: [patientId], references: [id])
+  patient   Patient  @relation(fields: [patientId], references: [id] , onDelete :Cascade)
   title     String
   fileUrl   String[]
 

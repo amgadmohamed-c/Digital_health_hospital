@@ -5,12 +5,14 @@ import allDoctorsData from "./getAllDoctors_controller";
 import { adminCreatenurse } from "./createNurse_controller";
 import { adminDeleteUser } from "./deleteUser_controller";
 import doctorWorkLoad from "./getDoctorWorkLoad_controller";
+import allNursesData from "./getAllNurses_controller";
 export const router: Router = express.Router();
 router.post("/createnurse",  adminCreatenurse);
 
 router.post("/createdoctor",  adminCreatedoctor) ; 
 router.get("/get/patients/all" , allPatientsData);
 router.get("/get/doctors/all" ,allDoctorsData ); 
+router.get("/get/nurses/all" , allNursesData)
 router.delete("/delete/:id/user" , adminDeleteUser);
 
 

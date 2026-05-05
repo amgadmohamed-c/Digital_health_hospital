@@ -15,20 +15,18 @@ type doctor = {
 
 
 }
-export async function isAdmin(email:string){
-    
-        const admin = await prisma.user.findUnique(
-            {
-                where:{
-                    email:email , 
-                    role:"ADMIN"
-                }
-            }
-        )
-        if(!admin){
-            return null
-        }
-        return true
+export async function isAdmin(email: string) {
+  const user = await prisma.user.findUnique({
+    where: {
+      email: email
+    }
+  });
+
+  if (!user || user.role !== "ADMIN") {
+    return null;
+  }
+
+  return true;
 }
 
 export default  async function createDoctor(doctorData:doctor){

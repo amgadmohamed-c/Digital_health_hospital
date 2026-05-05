@@ -8,6 +8,7 @@ import { router as patientProfile } from "./Modules/patientProfile/PatientProfil
 import { router as doctorProfile } from "./Modules/doctorProfile/DoctorProfile_router";
 import { router as emergency } from "./Modules/emergency/emergencyRouter";
 import fetchRoute from "./Modules/fetchedUiData/fetch_router";
+import router  from "./Modules/surgery/surgeryRouter"
 import { initSocketServer } from "./Modules/chat/chat_socket";
 import chatRoute from "./Modules/chat/chat_route";
 import cors from "cors";
@@ -27,7 +28,8 @@ app.use(doctorProfile);
 app.use(patientProfile);
 app.use(adminActions);
 app.use(emergency);
-app.use("/chat", chatRoute); // 👈 prefix added
+app.use("/chat", chatRoute)
+ app.use(router); // 👈 prefix added
 
 const server = createServer(app); // 👈 create http server first
 initSocketServer(server);         // 👈 attach socket.io before listening

@@ -3,9 +3,7 @@ import prisma from "../lib/prisma";
 export default async function getAllCases(){
     try{
         const cases = await prisma.emergencyQueue.findMany();
-        if(cases.length == 0){
-            throw new Error("couldnt fetch data");
-        }
+ 
         return cases;
     }
     catch(err:any){

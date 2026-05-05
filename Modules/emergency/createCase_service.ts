@@ -27,12 +27,18 @@ const mapPriority = (value: string): Priority => {
 };
 
 export async function isStaff(email: string) {
-  const staff = await prisma.user.findUnique({
+  const user = await prisma.user.findUnique({
     where: { email },
     include: { doctor: true, nurse: true }
   });
 
-  return staff; // null if not found — let controller decide
+  if (!user) return null;
+
+  if (user.role === "ADMIN") return user;
+
+  if (user.doctor || user.nurse) return user;
+
+  return null;
 }
 
 export default async function createEmergencyCase(data: CaseData) {

@@ -7,9 +7,14 @@ export default async function getAllDoctors(){
         where:{role:"DOCTOR"} , 
         include:{
 
-            doctor:true
+            doctor:{
+                include:{
+                    department:true
+                }
+             }, 
                         } 
           })
+          console.log(doctors);
           if(!doctors){
             throw new Error("doctors data couldnt be retrived");
           }
