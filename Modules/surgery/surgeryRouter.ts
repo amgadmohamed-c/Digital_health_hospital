@@ -1,14 +1,19 @@
-import { Router  }from "express";
+import { Router } from "express";
 import express from "express";
 import createSurgery from "./createSurgery_controller";
 import cancelSurgery from "./cancelSurgery_controller";
 import createSurgeryNoteController from "./createSurgeryNote_controller";
 import getTodaySurgeriesController from "./getTodaySurgeryies_controller";
-const router :Router = express.Router();
+import { getPatientSurgeries_Controller } from "./getPatientSurgeries_controller";
 
-router.post("/create/surgery" , createSurgery);
-router.delete("/cancel/:surgeryId" , cancelSurgery)
-router.put("/:surgeryId/notes" , createSurgeryNoteController);
-router.get("/get/today/surgeries" , getTodaySurgeriesController );
+const router: Router = express.Router();
+
+router.post("/create/surgery", createSurgery);
+router.delete("/cancel/:surgeryId", cancelSurgery);
+router.put("/:surgeryId/notes", createSurgeryNoteController);
+router.get("/get/today/surgeries", getTodaySurgeriesController);
+
+// No :patientId param — the controller reads the patient from the JWT
+router.get("/patient/surgeries", getPatientSurgeries_Controller);
 
 export default router;

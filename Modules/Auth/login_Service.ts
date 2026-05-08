@@ -28,17 +28,16 @@ export  async function UserLogin(data : userdata){
         if(!doesExist){
             throw new Error("password is incorrect");
         }
+        if(user&& user.doctor){
+            const availableDoctor = await prisma.availability.updateMany({
+                where:{ doctorId : user.doctor.id },
+                data:{isActive:true}
+            })
+        }
+            }
             
         return user  
-            
-        
-    }else{
-        throw new Error("user not found")
-    }
-    
-
-
-        
+              
     }catch(error){
         if(error instanceof Error ){
             throw new Error(error.message||"user name or password is wrong");
