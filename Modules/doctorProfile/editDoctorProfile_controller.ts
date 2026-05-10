@@ -30,9 +30,10 @@ const img = req.file
     const data = {
           name: req.body.name ,
           email: email, 
-          specilization: req.body.specialization ,
+          specilization: req.body.specialty ,
           bio : req.body.bio , 
           img :img,
+          experience :req.body.experience
        
     } ; 
     console.log(data)

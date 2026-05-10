@@ -1,65 +1,16 @@
 openapi: 3.0.3
 info:
   title: Hospital Management API
-  description: |
-    REST API for a hospital management system covering authentication, patient profiles,
-    doctor scheduling, appointments, emergency cases, surgeries, and real-time chat.
-
-    ## Authentication
-    All endpoints (except `/signup`, `/login`, `/reauth`) require a Bearer token in the
-    `Authorization` header obtained from `POST /login`.
-
-    ## Real-time Chat
-    In addition to the REST endpoints below, the server exposes a **Socket.io** endpoint
-    for real-time messaging during online appointments.
-
-    ### Socket.io connection
-    ```
-    const socket = io("http://localhost:8000", {
-      auth: { token: "<access_token>" }
-    });
-    ```
-
-    ### Events (client → server)
-    | Event | Payload | Description |
-    |---|---|---|
-    | `join_session` | `sessionId: string` | Join a chat room |
-    | `send_message` | `content: string` | Send a message |
-
-    ### Events (server → client)
-    | Event | Payload | Description |
-    |---|---|---|
-    | `joined` | `{ sessionId, message }` | Confirmed joined |
-    | `new_message` | Message object | Broadcast to all in room |
-    | `session_ended` | `{ message }` | Cron closed the session |
-    | `user_left` | `{ message }` | Other participant disconnected |
-    | `error` | `{ message }` | Something went wrong |
-
+  description: >
+    REST API for a hospital management system covering authentication, patient
+    profiles, doctor profiles, appointments, emergency cases, surgeries, and
+    real-time chat. All routes except /signup, /login, /reauth, and /fetchdata
+    require a Bearer JWT access token.
   version: 1.0.0
-  contact:
-    name: Hospital API Support
 
 servers:
   - url: http://localhost:8000
     description: Local development server
-
-tags:
-  - name: Auth
-    description: Signup, login and token management
-  - name: Patient Profile
-    description: View and edit patient profile data
-  - name: Doctor
-    description: Appointment booking, availability and visit management
-  - name: Admin
-    description: Admin-only actions — create staff, view all users
-  - name: Emergency
-    description: Emergency queue management
-  - name: Surgery
-    description: Surgery scheduling and management
-  - name: Chat
-    description: Online appointment chat sessions
-
-# ─── Security ────────────────────────────────────────────────────────────────
 
 components:
   securitySchemes:
@@ -69,366 +20,319 @@ components:
       bearerFormat: JWT
 
   schemas:
-
-    # ── Enums ────────────────────────────────────────────────────────────────
-
-    Gender:
-      type: string
-      enum: [MALE, FEMALE]
-
-    Role:
-      type: string
-      enum: [PATIENT, DOCTOR, NURSE, ADMIN]
-
-    AppointmentType:
-      type: string
-      enum: [HOSPITAL, ONLINE]
-
-    AppointmentStatus:
-      type: string
-      enum: [SCHEDULED, ACTIVE, COMPLETED, CANCELLED]
-
-    Priority:
-      type: string
-      enum: [LOW, MEDIUM, HIGH, CRITICAL]
-
-    QueueStatus:
-      type: string
-      enum: [WAITING, IN_TREATMENT, STABLE, ADMITTED, DISCHARGED]
-
-    SurgeryType:
-      type: string
-      enum: [SCHEDULED, EMERGENCY, URGENT]
-
-    SurgeryStatus:
-      type: string
-      enum: [PENDING, IN_PROGRESS, COMPLETED, CANCELLED]
-
-    SenderType:
-      type: string
-      enum: [DOCTOR, PATIENT]
-
-    # ── Models ───────────────────────────────────────────────────────────────
-
-    Patient:
-      type: object
-      properties:
-        id:
-          type: string
-          format: uuid
-        userId:
-          type: string
-          format: uuid
-        bloodtype:
-          type: string
-          nullable: true
-        allergies:
-          type: string
-          nullable: true
-        img:
-          type: string
-          nullable: true
-        createdAt:
-          type: string
-          format: date-time
-
-    Doctor:
-      type: object
-      properties:
-        id:
-          type: string
-          format: uuid
-        userId:
-          type: string
-          format: uuid
-        specialization:
-          type: string
-        departmentId:
-          type: string
-          format: uuid
-        img:
-          type: string
-          nullable: true
-        bio:
-          type: string
-          nullable: true
-        createdAt:
-          type: string
-          format: date-time
-
-    User:
-      type: object
-      properties:
-        id:
-          type: string
-          format: uuid
-        name:
-          type: string
-        email:
-          type: string
-          format: email
-        phone:
-          type: string
-        gender:
-          $ref: '#/components/schemas/Gender'
-        age:
-          type: integer
-        role:
-          $ref: '#/components/schemas/Role'
-        createdAt:
-          type: string
-          format: date-time
-
-    Appointment:
-      type: object
-      properties:
-        id:
-          type: string
-          format: uuid
-        patientId:
-          type: string
-          format: uuid
-        doctorId:
-          type: string
-          format: uuid
-        departmentId:
-          type: string
-          format: uuid
-        type:
-          $ref: '#/components/schemas/AppointmentType'
-        status:
-          $ref: '#/components/schemas/AppointmentStatus'
-        scheduledAt:
-          type: string
-          format: date-time
-        endsAt:
-          type: string
-          format: date-time
-        durationMinutes:
-          type: integer
-          default: 30
-        createdAt:
-          type: string
-          format: date-time
-
-    Visit:
-      type: object
-      properties:
-        id:
-          type: string
-          format: uuid
-        patientId:
-          type: string
-          format: uuid
-        doctorId:
-          type: string
-          format: uuid
-        departmentId:
-          type: string
-          format: uuid
-        appointmentId:
-          type: string
-          format: uuid
-          nullable: true
-        roomId:
-          type: string
-          format: uuid
-          nullable: true
-        diagnosis:
-          type: string
-          nullable: true
-        notes:
-          type: string
-          nullable: true
-        createdAt:
-          type: string
-          format: date-time
-
-    TimeSlot:
-      type: object
-      properties:
-        startTime:
-          type: string
-          format: date-time
-        endTime:
-          type: string
-          format: date-time
-        taken:
-          type: boolean
-
-    Availability:
-      type: object
-      properties:
-        id:
-          type: string
-          format: uuid
-        doctorId:
-          type: string
-          format: uuid
-        dayOfWeek:
-          type: integer
-          minimum: 0
-          maximum: 6
-          description: "0 = Sunday, 6 = Saturday"
-        startTime:
-          type: string
-          example: "09:00"
-        endTime:
-          type: string
-          example: "17:00"
-        slotDuration:
-          type: integer
-          default: 30
-          description: "Minutes per appointment slot"
-        isActive:
-          type: boolean
-          default: true
-
-    EmergencyQueue:
-      type: object
-      properties:
-        id:
-          type: string
-          format: uuid
-        patientId:
-          type: string
-          format: uuid
-        doctorId:
-          type: string
-          format: uuid
-          nullable: true
-        departmentId:
-          type: string
-          format: uuid
-        priority:
-          $ref: '#/components/schemas/Priority'
-        status:
-          $ref: '#/components/schemas/QueueStatus'
-        arrivalTime:
-          type: string
-          format: date-time
-
-    Surgery:
-      type: object
-      properties:
-        id:
-          type: string
-          format: uuid
-        patientId:
-          type: string
-          format: uuid
-        surgeonId:
-          type: string
-          format: uuid
-        roomId:
-          type: string
-          format: uuid
-          nullable: true
-        emergencyQueueId:
-          type: string
-          format: uuid
-          nullable: true
-        type:
-          $ref: '#/components/schemas/SurgeryType'
-        surgeryStatus:
-          $ref: '#/components/schemas/SurgeryStatus'
-        priority:
-          $ref: '#/components/schemas/Priority'
-          nullable: true
-        notes:
-          type: string
-          nullable: true
-        scheduledAt:
-          type: string
-          format: date-time
-          nullable: true
-        estimatedDuration:
-          type: integer
-          nullable: true
-          description: "Duration in minutes"
-        startedAt:
-          type: string
-          format: date-time
-          nullable: true
-        endedAt:
-          type: string
-          format: date-time
-          nullable: true
-        requestedBy:
-          type: string
-          format: uuid
-          nullable: true
-        createdAt:
-          type: string
-          format: date-time
-
-    ChatSession:
-      type: object
-      properties:
-        id:
-          type: string
-          format: uuid
-        appointmentId:
-          type: string
-          format: uuid
-        startedAt:
-          type: string
-          format: date-time
-          nullable: true
-        endedAt:
-          type: string
-          format: date-time
-          nullable: true
-
-    Message:
-      type: object
-      properties:
-        id:
-          type: string
-          format: uuid
-        sessionId:
-          type: string
-          format: uuid
-        senderId:
-          type: string
-          format: uuid
-        senderType:
-          $ref: '#/components/schemas/SenderType'
-        content:
-          type: string
-        createdAt:
-          type: string
-          format: date-time
-
-    # ── Common Responses ─────────────────────────────────────────────────────
-
-    ErrorResponse:
+    # ── Generic ───────────────────────────────────────────────
+    ErrorMessage:
       type: object
       properties:
         err:
           type: string
-        error:
-          type: string
+      example:
+        err: "Some error message"
 
     MessageResponse:
       type: object
       properties:
         message:
           type: string
+      example:
+        message: "Operation successful"
 
-# ─── Global Security ─────────────────────────────────────────────────────────
+    # ── Auth ──────────────────────────────────────────────────
+    SignupRequest:
+      type: object
+      required: [name, email, password, phone, age, ssn]
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          format: password
+        phone:
+          type: string
+        age:
+          type: integer
+        ssn:
+          type: string
+        gender:
+          type: string
+          enum: [MALE, FEMALE]
+
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          format: password
+
+    LoginResponse:
+      type: object
+      properties:
+        access_Token:
+          type: string
+        expiresin:
+          type: string
+          format: date-time
+        refresh_Token:
+          type: string
+        role:
+          type: string
+          enum: [ADMIN, DOCTOR, NURSE, PATIENT]
+        id:
+          type: string
+          description: Patient or Doctor record id (present based on role)
+
+    ReauthRequest:
+      type: object
+      required: [token]
+      properties:
+        token:
+          type: string
+
+    ReauthResponse:
+      type: object
+      properties:
+        access_Token:
+          type: string
+        expiresin:
+          type: string
+          format: date-time
+
+    # ── Admin ─────────────────────────────────────────────────
+    CreateDoctorRequest:
+      type: object
+      required: [name, email, password, phone, age]
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+        department:
+          type: string
+        specialization:
+          type: string
+        phone:
+          type: string
+        age:
+          type: integer
+        gender:
+          type: string
+          enum: [MALE, FEMALE]
+
+    CreateNurseRequest:
+      type: object
+      required: [name, email, password, phone, age]
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+        department:
+          type: string
+        phone:
+          type: string
+        age:
+          type: integer
+        gender:
+          type: string
+          enum: [MALE, FEMALE]
+
+    # ── Doctor ────────────────────────────────────────────────
+    AvailabilitySlotsRequest:
+      type: object
+      required: [doctorId]
+      properties:
+        doctorId:
+          type: string
+
+    BookAppointmentRequest:
+      type: object
+      required: [doctorId, type, startTime]
+      properties:
+        doctorId:
+          type: string
+        type:
+          type: string
+          enum: [HOSPITAL, ONLINE]
+        appointmentType:
+          type: string
+          enum: [HOSPITAL, ONLINE]
+          description: Alias for `type`
+        startTime:
+          type: string
+          format: date-time
+        scheduledAt:
+          type: string
+          format: date-time
+          description: Alias for `startTime`
+        status:
+          type: string
+          enum: [SCHEDULED, ACTIVE, COMPLETED, CANCELLED]
+          default: SCHEDULED
+        duration:
+          type: integer
+          default: 30
+          description: Duration in minutes
+
+    CancelAppointmentRequest:
+      type: object
+      required: [id]
+      properties:
+        id:
+          type: string
+        appintmentStatus:
+          type: string
+          enum: [CANCELLED]
+
+    SetAvailabilityRequest:
+      type: array
+      items:
+        type: object
+        properties:
+          dayOfWeek:
+            type: string
+            enum: [MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY, SATURDAY, SUNDAY]
+          startTime:
+            type: string
+            example: "09:00"
+          endTime:
+            type: string
+            example: "17:00"
+
+    SetVisitDataRequest:
+      type: object
+      properties:
+        diagnosis:
+          type: string
+        notes:
+          type: string
+
+    # ── Emergency ─────────────────────────────────────────────
+    CreateEmergencyCaseRequest:
+      type: object
+      required: [department, priority]
+      properties:
+        patientEmail:
+          type: string
+          format: email
+          description: Email of existing patient. Omit for walk-in.
+        ssn:
+          type: string
+          description: Required if patientEmail is not provided (walk-in)
+        gender:
+          type: string
+          enum: [MALE, FEMALE]
+        doctorId:
+          type: string
+        department:
+          type: string
+        priority:
+          type: string
+
+    UpdateEmergencyCaseRequest:
+      type: object
+      required: [id, status]
+      properties:
+        id:
+          type: string
+        status:
+          type: string
+          enum: [WAITING, IN_TREATMENT, STABLE, ADMITTED, DISCHARGED]
+
+    # ── Surgery ───────────────────────────────────────────────
+    CreateSurgeryRequest:
+      type: object
+      required: [patientId, surgeonId, surgeryType]
+      properties:
+        patientId:
+          type: string
+        surgeonId:
+          type: string
+        roomId:
+          type: string
+        emergencyQueueId:
+          type: string
+        surgeryType:
+          type: string
+        priority:
+          type: string
+        notes:
+          type: string
+        scheduledAt:
+          type: string
+          format: date-time
+        estimatedDuration:
+          type: integer
+          description: Duration in minutes
+
+    SurgeryNoteRequest:
+      type: object
+      required: [content]
+      properties:
+        content:
+          type: string
+
+    # ── Chat ──────────────────────────────────────────────────
+    StartChatSessionRequest:
+      type: object
+      required: [appointmentId]
+      properties:
+        appointmentId:
+          type: string
+
+    ChatSession:
+      type: object
+      properties:
+        id:
+          type: string
+        appointmentId:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+
+    ChatMessagesResponse:
+      type: object
+      properties:
+        session:
+          $ref: '#/components/schemas/ChatSession'
+        messages:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+              sessionId:
+                type: string
+              senderId:
+                type: string
+              content:
+                type: string
+              createdAt:
+                type: string
+                format: date-time
 
 security:
   - BearerAuth: []
 
-# ─── Paths ───────────────────────────────────────────────────────────────────
-
 paths:
 
-  # ════════════════════════════════════════════════════════════════════════════
-  # AUTH
-  # ════════════════════════════════════════════════════════════════════════════
-
+  # ════════════════════════════════════════════════════════════
+  # AUTH  (no token required)
+  # ════════════════════════════════════════════════════════════
   /signup:
     post:
       tags: [Auth]
@@ -439,140 +343,346 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              required: [name, email, password, phone, age, ssn]
-              properties:
-                name:
-                  type: string
-                  example: "John Doe"
-                email:
-                  type: string
-                  format: email
-                  example: "john@example.com"
-                password:
-                  type: string
-                  format: password
-                  example: "secret123"
-                phone:
-                  type: string
-                  example: "0123456789"
-                age:
-                  type: integer
-                  example: 30
-                ssn:
-                  type: string
-                  example: "123456789"
-                gender:
-                  $ref: '#/components/schemas/Gender'
+              $ref: '#/components/schemas/SignupRequest'
       responses:
         '201':
-          description: User created successfully
+          description: Patient created successfully
           content:
             application/json:
               schema:
-                type: string
-                example: "user created successfully"
+                type: object
+                properties:
+                  id:
+                    type: string
+                  userId:
+                    type: string
         '409':
           description: User already exists
           content:
             application/json:
               schema:
-                type: string
-                example: "user already exist"
+                $ref: '#/components/schemas/ErrorMessage'
 
   /login:
     post:
       tags: [Auth]
-      summary: Login and receive access + refresh tokens
+      summary: Authenticate and receive JWT tokens
       security: []
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              type: object
-              required: [email, password]
-              properties:
-                email:
-                  type: string
-                  format: email
-                  example: "john@example.com"
-                password:
-                  type: string
-                  format: password
-                  example: "secret123"
+              $ref: '#/components/schemas/LoginRequest'
       responses:
         '200':
-          description: Login successful
+          description: Tokens and user role returned
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  access_Token:
-                    type: string
-                    description: JWT access token (expires in 15 minutes)
-                  expiresin:
-                    type: string
-                    format: date-time
-                    description: Access token expiry timestamp
-                  refresh_Token:
-                    type: string
-                    description: JWT refresh token (expires in 7 days)
-                  role:
-                    $ref: '#/components/schemas/Role'
+                $ref: '#/components/schemas/LoginResponse'
         '401':
           description: Invalid credentials
           content:
             application/json:
               schema:
                 type: string
+                example: "user doesnt exist"
 
   /reauth:
     post:
       tags: [Auth]
-      summary: Get a new access token using a refresh token
+      summary: Refresh access token using a refresh token
       security: []
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              type: object
-              required: [token]
-              properties:
-                token:
-                  type: string
-                  description: A valid refresh token
+              $ref: '#/components/schemas/ReauthRequest'
       responses:
         '200':
           description: New access token issued
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  access_Token:
-                    type: string
-                  expiresin:
-                    type: string
-                    format: date-time
+                $ref: '#/components/schemas/ReauthResponse'
         '401':
-          description: Invalid token
+          description: Token invalid or not found
+          content:
+            application/json:
+              schema:
+                type: string
         '403':
           description: Token expired
+          content:
+            application/json:
+              schema:
+                type: string
 
-  # ════════════════════════════════════════════════════════════════════════════
+  # ════════════════════════════════════════════════════════════
+  # PUBLIC UI DATA  (no token required)
+  # ════════════════════════════════════════════════════════════
+  /fetchdata:
+    get:
+      tags: [UI Data]
+      summary: Fetch aggregated UI data (departments, specializations, etc.)
+      security: []
+      responses:
+        '200':
+          description: UI data payload
+          content:
+            application/json:
+              schema:
+                type: object
+        '500':
+          description: Failed to fetch data
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+
+  # ════════════════════════════════════════════════════════════
+  # ADMIN  (token + ADMIN role required)
+  # ════════════════════════════════════════════════════════════
+  /createdoctor:
+    post:
+      tags: [Admin]
+      summary: Create a new doctor account
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateDoctorRequest'
+      responses:
+        '201':
+          description: Doctor created; returns new doctor record
+          content:
+            application/json:
+              schema:
+                type: object
+        '400':
+          description: Bad request / invalid data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
+        '403':
+          description: Forbidden — admin only
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
+        '409':
+          description: Conflict — user already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
+
+  /createnurse:
+    post:
+      tags: [Admin]
+      summary: Create a new nurse account
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateNurseRequest'
+      responses:
+        '201':
+          description: Nurse created; returns new nurse record
+          content:
+            application/json:
+              schema:
+                type: object
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
+        '403':
+          description: Forbidden — admin only
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
+
+  /get/patients/all:
+    get:
+      tags: [Admin]
+      summary: Get all patient records
+      responses:
+        '200':
+          description: Array of patient records
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
+        '403':
+          description: Forbidden — admin only
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
+
+  /get/doctors/all:
+    get:
+      tags: [Admin]
+      summary: Get all doctor records
+      responses:
+        '200':
+          description: Array of doctor records
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
+        '403':
+          description: Forbidden — admin only
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
+
+  /get/nurses/all:
+    get:
+      tags: [Admin]
+      summary: Get all nurse records
+      responses:
+        '200':
+          description: Array of nurse records
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
+        '403':
+          description: Forbidden — admin only
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
+
+  /delete/{id}/user:
+    delete:
+      tags: [Admin]
+      summary: Delete a user by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: User deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "user deleted"
+                  user:
+                    type: object
+        '400':
+          description: User id is undefined
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
+        '403':
+          description: Forbidden — admin only
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
+
+  /doctor/{id}/workload:
+    get:
+      tags: [Admin]
+      summary: Get a doctor's workload (appointments + surgeries summary)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Workload data for the specified doctor
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
+        '403':
+          description: Forbidden — admin only
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
+
+  # ════════════════════════════════════════════════════════════
   # PATIENT PROFILE
-  # ════════════════════════════════════════════════════════════════════════════
-
+  # ════════════════════════════════════════════════════════════
   /editprofile:
     put:
       tags: [Patient Profile]
-      summary: Edit the logged-in patient's profile
-      description: |
-        Supports multipart/form-data for uploading a profile image and medical record files.
-        All fields are optional — only provided fields are updated.
+      summary: Edit the authenticated patient's profile (supports file uploads)
       requestBody:
         required: true
         content:
@@ -587,20 +697,20 @@ paths:
                 age:
                   type: integer
                 gender:
-                  $ref: '#/components/schemas/Gender'
+                  type: string
+                  enum: [MALE, FEMALE]
+                password:
+                  type: string
                 bloodtype:
                   type: string
-                  example: "A+"
                 allergies:
                   type: string
-                  example: "Penicillin"
                 recordTitle:
                   type: string
-                  example: "Annual checkup"
                 profile:
                   type: string
                   format: binary
-                  description: Profile image file (max 1)
+                  description: Profile image (max 1)
                 records:
                   type: array
                   items:
@@ -616,233 +726,356 @@ paths:
                 $ref: '#/components/schemas/MessageResponse'
         '400':
           description: Bad request
+          content:
+            application/json:
+              schema:
+                type: string
         '401':
           description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+
+  /patient/records:
+    post:
+      tags: [Patient Profile]
+      summary: Upload one or more medical records for the authenticated patient
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [recordTitle, records]
+              properties:
+                recordTitle:
+                  type: string
+                records:
+                  type: array
+                  items:
+                    type: string
+                    format: binary
+                  description: Medical record files (max 10)
+      responses:
+        '201':
+          description: Record added successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+        '400':
+          description: Validation error (missing title or files)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
 
   /patient/me:
     get:
       tags: [Patient Profile]
-      summary: Get the logged-in patient's profile
+      summary: Get the authenticated patient's own profile
       responses:
         '200':
-          description: Patient profile data
+          description: Patient profile object
           content:
             application/json:
               schema:
                 type: object
-                properties:
-                  name:
-                    type: string
-                  email:
-                    type: string
-                  phone:
-                    type: string
-                  age:
-                    type: integer
-                  gender:
-                    $ref: '#/components/schemas/Gender'
-                  patientProfile:
-                    $ref: '#/components/schemas/Patient'
         '400':
           description: Error fetching profile
-        '401':
-          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
 
   /patient/{id}/profile:
     get:
       tags: [Patient Profile]
-      summary: Get a patient's profile by user ID
+      summary: Get a patient's profile by ID
       parameters:
         - name: id
           in: path
           required: true
           schema:
             type: string
-            format: uuid
-          description: The user ID (not patient ID)
       responses:
         '200':
-          description: Patient profile data
+          description: Patient profile object
           content:
             application/json:
               schema:
                 type: object
-                properties:
-                  name:
-                    type: string
-                  age:
-                    type: integer
-                  email:
-                    type: string
-                  patient:
-                    $ref: '#/components/schemas/Patient'
         '400':
-          description: User ID is undefined
+          description: User id is undefined
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
         '500':
-          description: User or patient not found
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
 
-  # ════════════════════════════════════════════════════════════════════════════
-  # DOCTOR
-  # ════════════════════════════════════════════════════════════════════════════
-
-  /available/appointment/slots:
+  /patient/{id}/appointments:
     get:
-      tags: [Doctor]
-      summary: Get available appointment slots for a doctor today
-      description: |
-        Returns all time slots for the doctor's availability today, 
-        marked as taken or available. Blocks already booked by appointments
-        or surgeries are marked `taken: true`.
+      tags: [Patient Profile]
+      summary: Get all appointments for a patient (patient reads own via JWT)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Array of appointment objects
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+        '403':
+          description: Forbidden — patient access only
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+
+  # ════════════════════════════════════════════════════════════
+  # DOCTOR PROFILE
+  # ════════════════════════════════════════════════════════════
+  /editdoctorprofile:
+    put:
+      tags: [Doctor Profile]
+      summary: Edit the authenticated doctor's profile (supports profile image upload)
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                specialty:
+                  type: string
+                bio:
+                  type: string
+                experience:
+                  type: string
+                profile:
+                  type: string
+                  format: binary
+                  description: Profile image
+      responses:
+        '200':
+          description: Profile updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                type: string
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+
+  /doctor/me:
+    get:
+      tags: [Doctor Profile]
+      summary: Get the authenticated doctor's own profile
+      responses:
+        '200':
+          description: Doctor profile object
+          content:
+            application/json:
+              schema:
+                type: object
+        '400':
+          description: Error fetching profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
+
+  /doctor/{id}/profile:
+    get:
+      tags: [Doctor Profile]
+      summary: Get a doctor's profile by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Doctor profile object
+          content:
+            application/json:
+              schema:
+                type: object
+        '400':
+          description: User id is undefined
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
+
+  # ════════════════════════════════════════════════════════════
+  # DOCTOR — APPOINTMENTS & AVAILABILITY
+  # ════════════════════════════════════════════════════════════
+  /available/appointment/slots:
+    post:
+      tags: [Appointments]
+      summary: Get available appointment slots for a specific doctor
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              type: object
-              required: [doctorId]
-              properties:
-                doctorId:
-                  type: string
-                  format: uuid
+              $ref: '#/components/schemas/AvailabilitySlotsRequest'
       responses:
         '200':
-          description: List of time slots
+          description: Array of available slots, or message if none found
           content:
             application/json:
               schema:
                 oneOf:
                   - type: array
                     items:
-                      $ref: '#/components/schemas/TimeSlot'
-                  - type: object
-                    properties:
-                      message:
-                        type: string
-                        example: "no slots was found"
+                      type: object
+                  - $ref: '#/components/schemas/MessageResponse'
         '400':
-          description: Doctor not found or no availability set
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
         '401':
           description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
 
   /new/appointment:
     post:
-      tags: [Doctor]
-      summary: Book a new appointment
-      description: Books an appointment for the logged-in patient with a doctor.
+      tags: [Appointments]
+      summary: Book a new appointment for the authenticated patient
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              type: object
-              required: [doctorId, scheduledAt, appointmentType, duration]
-              properties:
-                doctorId:
-                  type: string
-                  format: uuid
-                scheduledAt:
-                  type: string
-                  format: date-time
-                  example: "2026-05-10T09:00:00.000Z"
-                appointmentType:
-                  $ref: '#/components/schemas/AppointmentType'
-                duration:
-                  type: integer
-                  description: Duration in minutes
-                  example: 30
+              $ref: '#/components/schemas/BookAppointmentRequest'
       responses:
         '200':
-          description: Appointment booked
+          description: Appointment object
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Appointment'
+                type: object
         '400':
-          description: Invalid data or booking failed
+          description: Validation error or booking failure
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
         '401':
           description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
 
   /cancel/appointment:
     patch:
-      tags: [Doctor]
+      tags: [Appointments]
       summary: Cancel an appointment (staff only)
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              type: object
-              required: [id, appintmentStatus]
-              properties:
-                id:
-                  type: string
-                  format: uuid
-                  description: Appointment ID
-                appintmentStatus:
-                  $ref: '#/components/schemas/AppointmentStatus'
+              $ref: '#/components/schemas/CancelAppointmentRequest'
       responses:
         '200':
-          description: Appointment cancelled
+          description: Appointment cancelled successfully
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/MessageResponse'
         '400':
-          description: Failed to cancel
+          description: Cancellation failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
         '401':
           description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
         '403':
           description: Forbidden — staff only
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
 
   /{doctorId}/availability:
     put:
-      tags: [Doctor]
-      summary: Set or replace a doctor's weekly availability (staff only)
-      description: |
-        Fully replaces the doctor's availability schedule with the provided array.
-        Existing availability for this doctor is deleted and recreated atomically.
+      tags: [Appointments]
+      summary: Set weekly availability schedule for a doctor (staff only)
       parameters:
         - name: doctorId
           in: path
           required: true
           schema:
             type: string
-            format: uuid
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              type: array
-              minItems: 1
-              items:
-                type: object
-                required: [dayOfWeek, startTime, endTime]
-                properties:
-                  dayOfWeek:
-                    type: integer
-                    minimum: 0
-                    maximum: 6
-                    description: "0 = Sunday, 6 = Saturday"
-                  startTime:
-                    type: string
-                    example: "09:00"
-                  endTime:
-                    type: string
-                    example: "17:00"
-                  slotDuration:
-                    type: integer
-                    default: 30
-                    description: Minutes per slot
-              example:
-                - dayOfWeek: 1
-                  startTime: "09:00"
-                  endTime: "17:00"
-                  slotDuration: 30
-                - dayOfWeek: 3
-                  startTime: "10:00"
-                  endTime: "14:00"
-                  slotDuration: 20
+              $ref: '#/components/schemas/SetAvailabilityRequest'
       responses:
         '200':
           description: Availability updated
@@ -854,41 +1087,42 @@ paths:
                   message:
                     type: string
                   data:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/Availability'
+                    type: object
         '400':
           description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
         '500':
           description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
 
   /appointment/{appointmentId}/visit-data:
     put:
-      tags: [Doctor]
-      summary: Set or update visit diagnosis and notes (staff only)
-      description: |
-        Can only be called while the appointment is ACTIVE.
-        Uses upsert — creates the visit if it doesn't exist, updates if it does.
+      tags: [Appointments]
+      summary: Set diagnosis and notes for a completed appointment visit
       parameters:
         - name: appointmentId
           in: path
           required: true
           schema:
             type: string
-            format: uuid
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                diagnosis:
-                  type: string
-                  example: "Hypertension stage 1"
-                notes:
-                  type: string
-                  example: "Patient advised to reduce sodium intake"
+              $ref: '#/components/schemas/SetVisitDataRequest'
       responses:
         '200':
           description: Visit data updated
@@ -900,208 +1134,83 @@ paths:
                   message:
                     type: string
                   data:
-                    $ref: '#/components/schemas/Visit'
+                    type: object
         '400':
-          description: Appointment not found or invalid data
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+
+  /available/doctors:
+    get:
+      tags: [Appointments]
+      summary: Get available doctors, optionally filtered by department
+      parameters:
+        - name: department
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Array of available doctors, or message if none found
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - type: array
+                    items:
+                      type: object
+                  - $ref: '#/components/schemas/MessageResponse'
+        '400':
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
+
+  /doctor/appointments/me:
+    get:
+      tags: [Appointments]
+      summary: Get all appointments for the authenticated doctor
+      responses:
+        '200':
+          description: Array of appointment objects
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
         '500':
           description: Internal server error
 
-  # ════════════════════════════════════════════════════════════════════════════
-  # ADMIN
-  # ════════════════════════════════════════════════════════════════════════════
-
-  /createdoctor:
-    post:
-      tags: [Admin]
-      summary: Create a new doctor account (admin only)
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [name, email, password, department, specialization, phone, age, gender]
-              properties:
-                name:
-                  type: string
-                email:
-                  type: string
-                  format: email
-                password:
-                  type: string
-                  format: password
-                department:
-                  type: string
-                  description: Department name (must exist in DB)
-                  example: "Cardiology"
-                specialization:
-                  type: string
-                  example: "Cardiologist"
-                phone:
-                  type: string
-                age:
-                  type: integer
-                gender:
-                  $ref: '#/components/schemas/Gender'
-      responses:
-        '201':
-          description: Doctor created
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Doctor'
-        '401':
-          description: Unauthorized or not admin
-        '409':
-          description: User already exists
-
-  /createnurse:
-    post:
-      tags: [Admin]
-      summary: Create a new nurse account (admin only)
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [name, email, password, department, phone, age, gender]
-              properties:
-                name:
-                  type: string
-                email:
-                  type: string
-                  format: email
-                password:
-                  type: string
-                  format: password
-                department:
-                  type: string
-                  example: "Emergency"
-                phone:
-                  type: string
-                age:
-                  type: integer
-                gender:
-                  $ref: '#/components/schemas/Gender'
-      responses:
-        '201':
-          description: Nurse created
-        '401':
-          description: Unauthorized or not admin
-        '409':
-          description: User already exists
-
-  /get/patients/all:
-    get:
-      tags: [Admin]
-      summary: Get all patients (admin only)
-      responses:
-        '200':
-          description: List of all patients
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Patient'
-        '401':
-          description: Unauthorized or not admin
-
-  /get/doctors/all:
-    get:
-      tags: [Admin]
-      summary: Get all doctors (admin only)
-      responses:
-        '200':
-          description: List of all doctors with user info
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  allOf:
-                    - $ref: '#/components/schemas/User'
-                    - type: object
-                      properties:
-                        doctor:
-                          $ref: '#/components/schemas/Doctor'
-        '401':
-          description: Unauthorized or not admin
-
-  /delete/{id}/user:
-    delete:
-      tags: [Admin]
-      summary: Delete a user by ID (admin only)
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
-      responses:
-        '200':
-          description: User deleted
-        '401':
-          description: Unauthorized or not admin
-        '404':
-          description: User not found
-
-  # ════════════════════════════════════════════════════════════════════════════
+  # ════════════════════════════════════════════════════════════
   # EMERGENCY
-  # ════════════════════════════════════════════════════════════════════════════
-
+  # ════════════════════════════════════════════════════════════
   /emergency:
     post:
       tags: [Emergency]
-      summary: Create an emergency case (staff only)
-      description: |
-        Two scenarios:
-        - **Existing patient**: provide `patientEmail`
-        - **Walk-in patient**: provide `ssn` (and optionally name/gender). 
-          A new account is created automatically with a placeholder email `{ssn}@hospital.internal`.
+      summary: Create a new emergency case (staff only)
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              type: object
-              required: [department, priority]
-              properties:
-                patientEmail:
-                  type: string
-                  format: email
-                  description: Email of existing patient. Omit for walk-ins.
-                ssn:
-                  type: string
-                  description: Required if patientEmail is not provided (walk-in)
-                gender:
-                  $ref: '#/components/schemas/Gender'
-                doctorId:
-                  type: string
-                  format: uuid
-                  description: Optional — can be assigned later
-                department:
-                  type: string
-                  example: "Emergency"
-                priority:
-                  $ref: '#/components/schemas/Priority'
-            examples:
-              existing_patient:
-                summary: Existing patient
-                value:
-                  patientEmail: "john@example.com"
-                  doctorId: "uuid-of-doctor"
-                  department: "Emergency"
-                  priority: "HIGH"
-              walk_in:
-                summary: Walk-in patient
-                value:
-                  ssn: "123456789"
-                  gender: "MALE"
-                  department: "Emergency"
-                  priority: "CRITICAL"
+              $ref: '#/components/schemas/CreateEmergencyCaseRequest'
       responses:
         '201':
           description: Emergency case created
@@ -1112,15 +1221,36 @@ paths:
                 properties:
                   message:
                     type: string
+                    example: "Case created successfully"
                   caseId:
                     type: string
-                    format: uuid
         '400':
           description: Validation error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
         '401':
           description: Unauthorized
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
         '403':
           description: Forbidden — staff only
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
 
   /get/all/emergency:
     get:
@@ -1128,179 +1258,145 @@ paths:
       summary: Get all emergency cases (staff only)
       responses:
         '200':
-          description: List of all emergency cases
+          description: Array of emergency case objects
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/EmergencyQueue'
+                  type: object
         '400':
-          description: No data found
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
         '403':
           description: Forbidden — staff only
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
 
   /get/active/emergency:
     get:
       tags: [Emergency]
-      summary: Get active emergency cases — status IN_TREATMENT (staff only)
+      summary: Get active emergency cases (staff only)
       responses:
         '200':
-          description: List of active cases
+          description: Array of active emergency case objects
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/EmergencyQueue'
+                  type: object
         '400':
-          description: No active cases found
-        '403':
-          description: Forbidden — staff only
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
 
   /get/critical/emergency:
     get:
       tags: [Emergency]
-      summary: Get critical priority emergency cases (staff only)
+      summary: Get critical-priority emergency cases (staff only)
       responses:
         '200':
-          description: List of critical cases
+          description: Array of critical emergency case objects
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/EmergencyQueue'
+                  type: object
         '400':
-          description: No critical cases found
-        '403':
-          description: Forbidden — staff only
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
 
   /update/emergency/:
     patch:
       tags: [Emergency]
-      summary: Update emergency case status (staff only)
+      summary: Update the status of an emergency case (staff only)
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              type: object
-              required: [id, status]
-              properties:
-                id:
-                  type: string
-                  format: uuid
-                  description: Emergency queue entry ID
-                status:
-                  $ref: '#/components/schemas/QueueStatus'
+              $ref: '#/components/schemas/UpdateEmergencyCaseRequest'
       responses:
         '200':
-          description: Case updated
+          description: Updated emergency case object
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/EmergencyQueue'
+                type: object
         '400':
-          description: Invalid status or case not found
+          description: Invalid status or error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
         '403':
           description: Forbidden — staff only
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
 
-  # ════════════════════════════════════════════════════════════════════════════
+  # ════════════════════════════════════════════════════════════
   # SURGERY
-  # ════════════════════════════════════════════════════════════════════════════
-
+  # ════════════════════════════════════════════════════════════
   /create/surgery:
     post:
       tags: [Surgery]
-      summary: Create a new surgery (staff only)
-      description: |
-        **SCHEDULED surgeries** — require `scheduledAt`. Cannot have a `scheduledAt` if type is EMERGENCY.
-        
-        **EMERGENCY surgeries** — `scheduledAt` must be omitted. Room is assigned dynamically.
-        
-        **URGENT surgeries** — `scheduledAt` is optional.
-        
-        `startedAt` and `endedAt` are not set at creation — they are updated when the surgery actually begins/ends.
+      summary: Schedule a new surgery (staff only)
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              type: object
-              required: [patientId, surgeonId, surgeryType]
-              properties:
-                patientId:
-                  type: string
-                  format: uuid
-                surgeonId:
-                  type: string
-                  format: uuid
-                surgeryType:
-                  $ref: '#/components/schemas/SurgeryType'
-                roomId:
-                  type: string
-                  format: uuid
-                  description: Optional — emergency surgeries grab a room dynamically
-                emergencyQueueId:
-                  type: string
-                  format: uuid
-                  description: Link to an emergency queue entry if applicable
-                priority:
-                  $ref: '#/components/schemas/Priority'
-                notes:
-                  type: string
-                scheduledAt:
-                  type: string
-                  format: date-time
-                  description: Required for SCHEDULED type, must be omitted for EMERGENCY
-                estimatedDuration:
-                  type: integer
-                  description: Duration in minutes
-            examples:
-              scheduled:
-                summary: Scheduled surgery
-                value:
-                  patientId: "uuid"
-                  surgeonId: "uuid"
-                  surgeryType: "SCHEDULED"
-                  roomId: "uuid"
-                  priority: "HIGH"
-                  scheduledAt: "2026-05-10T08:00:00.000Z"
-                  estimatedDuration: 120
-              emergency:
-                summary: Emergency surgery
-                value:
-                  patientId: "uuid"
-                  surgeonId: "uuid"
-                  surgeryType: "EMERGENCY"
-                  emergencyQueueId: "uuid"
-                  priority: "CRITICAL"
+              $ref: '#/components/schemas/CreateSurgeryRequest'
       responses:
         '201':
-          description: Surgery created
+          description: Surgery record created
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Surgery'
+                type: object
         '400':
           description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
         '401':
           description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
         '403':
           description: Forbidden — staff only
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
 
   /cancel/{surgeryId}:
     delete:
       tags: [Surgery]
-      summary: Cancel a surgery (staff only)
+      summary: Cancel / delete a surgery by ID (staff only)
       parameters:
         - name: surgeryId
           in: path
           required: true
           schema:
             type: string
-            format: uuid
       responses:
         '200':
           description: Surgery cancelled
@@ -1309,147 +1405,250 @@ paths:
               schema:
                 $ref: '#/components/schemas/MessageResponse'
         '400':
-          description: Surgery not found or already cancelled
+          description: Error cancelling surgery
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
         '403':
           description: Forbidden — staff only
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
 
   /{surgeryId}/notes:
     put:
       tags: [Surgery]
-      summary: Add or update surgery notes
+      summary: Add or update notes for a surgery
       parameters:
         - name: surgeryId
           in: path
           required: true
           schema:
             type: string
-            format: uuid
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              type: object
-              required: [content]
-              properties:
-                content:
-                  type: string
-                  example: "Patient responded well to anesthesia"
+              $ref: '#/components/schemas/SurgeryNoteRequest'
       responses:
         '200':
-          description: Notes updated
+          description: Updated surgery object with notes
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Surgery'
+                type: object
         '400':
-          description: surgeryId or content missing
+          description: Validation error or surgery not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
 
   /get/today/surgeries:
     get:
       tags: [Surgery]
       summary: Get all surgeries scheduled for today (staff only)
-      description: Returns surgeries with `scheduledAt` within today's date range (00:00 – 23:59).
       responses:
         '200':
-          description: List of today's surgeries
+          description: Array of today's surgery objects
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  allOf:
-                    - $ref: '#/components/schemas/Surgery'
-                    - type: object
-                      properties:
-                        patient:
-                          allOf:
-                            - $ref: '#/components/schemas/Patient'
-                            - type: object
-                              properties:
-                                user:
-                                  $ref: '#/components/schemas/User'
-                        surgeon:
-                          allOf:
-                            - $ref: '#/components/schemas/Doctor'
-                            - type: object
-                              properties:
-                                user:
-                                  $ref: '#/components/schemas/User'
-                        room:
-                          type: object
-                          nullable: true
+                  type: object
         '400':
-          description: Error fetching surgeries
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
         '403':
           description: Forbidden — staff only
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
 
-  # ════════════════════════════════════════════════════════════════════════════
+  /get/my/surgeries:
+    get:
+      tags: [Surgery]
+      summary: Get surgeries assigned to the authenticated doctor (staff only)
+      responses:
+        '200':
+          description: Array of doctor's surgery objects
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+
+  /get/surgery/rooms:
+    get:
+      tags: [Surgery]
+      summary: Get available surgery rooms (staff only)
+      responses:
+        '200':
+          description: Array of surgery room objects
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+
+  /patient/surgeries:
+    get:
+      tags: [Surgery]
+      summary: Get surgeries for the authenticated patient (read from JWT)
+      responses:
+        '200':
+          description: Array of patient's surgery objects
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+        '403':
+          description: Forbidden — patient access only
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+
+  # ════════════════════════════════════════════════════════════
   # CHAT
-  # ════════════════════════════════════════════════════════════════════════════
-
+  # ════════════════════════════════════════════════════════════
   /chat/session:
     post:
       tags: [Chat]
-      summary: Create or retrieve a chat session for an online appointment
-      description: |
-        Returns existing session if one already exists for the appointment.
-        Only works for `ONLINE` type appointments that are not `COMPLETED` or `CANCELLED`.
-        
-        After getting the sessionId, connect via **Socket.io** to send/receive messages in real time.
+      summary: Create or retrieve a chat session for an appointment
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              type: object
-              required: [appointmentId]
-              properties:
-                appointmentId:
-                  type: string
-                  format: uuid
+              $ref: '#/components/schemas/StartChatSessionRequest'
       responses:
         '200':
-          description: Chat session returned or created
+          description: Chat session object (created or existing)
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ChatSession'
         '400':
-          description: |
-            Possible errors:
-            - Appointment not found
-            - Chat is only for online appointments
-            - Appointment is no longer active
+          description: appointmentId is required or session error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
         '401':
           description: Unauthorized
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
 
   /chat/session/{sessionId}/messages:
     get:
       tags: [Chat]
-      summary: Get all messages for a chat session
+      summary: Fetch message history for a chat session
       parameters:
         - name: sessionId
           in: path
           required: true
           schema:
             type: string
-            format: uuid
       responses:
         '200':
-          description: Session and message history
+          description: Session and its messages
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChatMessagesResponse'
+        '400':
+          description: Error fetching messages
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  session:
-                    $ref: '#/components/schemas/ChatSession'
-                  messages:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/Message'
+                  error:
+                    type: string
         '401':
           description: Unauthorized
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
         '404':
           description: Session not found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string

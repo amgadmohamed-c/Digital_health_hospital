@@ -2,14 +2,16 @@ import cron from 'node-cron';
 import prisma from '../Modules/lib/prisma';
 import { closeChatSession } from '../Modules/chat/chatSession_service';
 import { closeSocketSession } from '../Modules/chat/chat_socket';
-cron.schedule("*/3 * * * *", async () => {
+
+console.log("appointment cron loaded");
+
+cron.schedule("*/1 * * * *", async () => {
   const now = new Date();
-  // Inside your existing cron, after marking appointments COMPLETED:
- 
+  let expiredAppointmentIds: string[] = [];
 
   await prisma.$transaction(async (tx) => {
     // 1. Activate scheduled appointments
-    await tx.appointment.updateMany({
+    const activated = await tx.appointment.updateMany({
       where: {
         status: "SCHEDULED",
         scheduledAt: { lte: now },
@@ -17,6 +19,7 @@ cron.schedule("*/3 * * * *", async () => {
       },
       data: { status: "ACTIVE" }
     });
+    console.log("Activated appointments:", activated.count);
 
     // 2. Find HOSPITAL active appointments with no visit yet
     const appointments = await tx.appointment.findMany({
@@ -26,22 +29,19 @@ cron.schedule("*/3 * * * *", async () => {
         visit: { is: null }
       }
     });
+    console.log("Appointments needing visits:", appointments);
 
     // 3. Bulk create visits with room assignment
     if (appointments.length > 0) {
       const rooms = await tx.room.findMany({
-        where: {
-          status: "AVAILABLE",
-        },
+        where: { status: "AVAILABLE" },
         take: appointments.length
       });
 
       // Mark fetched rooms as OCCUPIED immediately to prevent double-booking
       if (rooms.length > 0) {
         await tx.room.updateMany({
-          where: {
-            id: { in: rooms.map(r => r.id) }
-          },
+          where: { id: { in: rooms.map(r => r.id) } },
           data: { status: "OCCUPIED" }
         });
       }
@@ -57,26 +57,23 @@ cron.schedule("*/3 * * * *", async () => {
       });
     }
 
-    // 4. Complete expired appointments and free up rooms
+    // 4. Find expired active appointments
     const expiredAppointments = await tx.appointment.findMany({
       where: {
         status: "ACTIVE",
         endsAt: { lte: now }
       },
-      include: {
-        visit: true
-      }
+      include: { visit: true }
     });
 
     if (expiredAppointments.length > 0) {
+      // Collect IDs to close chat sessions AFTER the transaction commits
+      expiredAppointmentIds = expiredAppointments.map(a => a.id);
+
       // Free up rooms from completed visits
       const roomIds = expiredAppointments
         .map(appt => appt.visit?.roomId)
         .filter(Boolean) as string[];
-         for (const appt of expiredAppointments) {
-        const sessionId = await closeChatSession(appt.id); // close in DB
-        if (sessionId) closeSocketSession(sessionId);       // kick all sockets
-}
 
       if (roomIds.length > 0) {
         await tx.room.updateMany({
@@ -86,16 +83,16 @@ cron.schedule("*/3 * * * *", async () => {
       }
 
       await tx.appointment.updateMany({
-        where: {
-          id: { in: expiredAppointments.map(a => a.id) }
-        },
+        where: { id: { in: expiredAppointmentIds } },
         data: { status: "COMPLETED" }
       });
     }
   });
-  
 
-  
-}
-
-);
+  // Close chat sessions after transaction commits so a rollback
+  // doesn't leave sessions closed with no corresponding DB change
+  for (const id of expiredAppointmentIds) {
+    const sessionId = await closeChatSession(id);
+    if (sessionId) closeSocketSession(sessionId);
+  }
+});

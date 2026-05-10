@@ -9,7 +9,7 @@ type WeekData = {
 
 export default async function setAvailability(
     data: WeekData[],
-    doctorId: string
+    email: string
 ): Promise<typeof result> {
     // Input validation
     if (!data || data.length === 0) {
@@ -28,12 +28,17 @@ export default async function setAvailability(
     }
 
     // Verify doctor exists
-    const doctor = await prisma.doctor.findUnique({ where: { id: doctorId } });
-    if (!doctor) throw new Error("Doctor not found");
+    const user = await prisma.user.findUnique({
+        where:{email:email}
+    })
+    const mydoctor = await prisma.doctor.findUnique({ where: { userId: user?.id } });
+    if (!mydoctor) throw new Error("Doctor not found");
 
     // Atomic delete + recreate to fully replace availability
+    const doctorId = mydoctor.id
     await prisma.$transaction([
         prisma.availability.deleteMany({ where: { doctorId } }),
+        
         prisma.availability.createMany({
             data: data.map((d) => ({
                 doctorId,

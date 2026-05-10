@@ -135,6 +135,7 @@ model Doctor {
   department     Department @relation(fields: [departmentId], references: [id])
   img            String?
   bio            String?
+  experience     String?
 
   appointments       Appointment[]
   visits             Visit[]

@@ -5,6 +5,9 @@ import getDoctor from "./getDoctorProfile_controller";
 import profileDatabyId from "./getDrProfileId_controller";
 
 export const router :Router = express.Router() ; 
-router.put("/editdoctorprofile", upload.single("img") , newDoctorProfile) ; 
-router.get("/doctor/me" ,getDoctor );
+router.put(
+  "/editdoctorprofile",
+  upload.single("profile"), // MUST MATCH FRONTEND
+  newDoctorProfile
+);router.get("/doctor/me" ,getDoctor );
 router.get("/doctor/:id/profile" ,profileDatabyId );

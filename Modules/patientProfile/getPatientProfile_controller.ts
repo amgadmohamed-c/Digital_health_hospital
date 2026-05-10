@@ -17,6 +17,7 @@ export default  async function getPatient(req:Request , res: Response){
             throw new Error("no email was sent");
         }
         const patient = await patientData(email) ;
+        console.log(patient);
         return res.status(200).json(patient);
 
 

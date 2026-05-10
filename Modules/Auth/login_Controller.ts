@@ -55,6 +55,7 @@ export  async function Login_Auth(req:Request,res:Response){
 
 
 export function Authenticate_Token(req :customRequest , res :Response , next : NextFunction) {
+    console.log("🔵 JWT_SECRET exists:", !!process.env.JWT_SECRET);
     const auth = req.headers['authorization'];
     const token = auth && auth.split(' ')[1];
     if(token == null) return res.status(401).send("Token required");

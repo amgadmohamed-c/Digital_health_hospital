@@ -1,4 +1,3 @@
-import { emit } from "node:cluster";
 import prisma from "../lib/prisma";
 
 type doctorData = {
@@ -7,6 +6,7 @@ type doctorData = {
     email : string  
     specilization ? : string  , 
     img ? :string ,
+    experience ?  : string
 }
 export default async function editDoctorProfile  (newDoctor :doctorData) {
     try {
@@ -24,7 +24,8 @@ export default async function editDoctorProfile  (newDoctor :doctorData) {
             data:{
                 ...(newDoctor.bio && {bio : newDoctor.bio} ),
                 ...(newDoctor.specilization && {specialization : newDoctor.specilization}),
-                ...(newDoctor.img && {img : newDoctor.img}) 
+                ...(newDoctor.img && {img : newDoctor.img}) ,
+                ...(newDoctor.experience && {experience : newDoctor.experience})
  
             }
         }) ; 

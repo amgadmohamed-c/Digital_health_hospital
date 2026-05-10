@@ -20,18 +20,16 @@ export default async function createSurgery(req: Request, res: Response) {
 
     // Required fields
     if (!patientId) return res.status(400).json({ err: "patientId is required" });
-    if (!surgeonId) return res.status(400).json({ err: "surgeonId is required" });
     if (!surgeryType) return res.status(400).json({ err: "surgeryType is required" });
 
     const surgery = await saveSurgery({
       patientId,
-      surgeonId,
+      email,
       roomId,
       emergencyQueueId,
       type: surgeryType,
       priority,
-      notes,
-      // Parse date strings from request body safely
+      notes,// Parse date strings from request body safely
       scheduledAt: scheduledAt ? new Date(scheduledAt) : undefined,
       estimatedDuration: estimatedDuration ? Number(estimatedDuration) : undefined,
       requestedBy: staff.doctor?.id

@@ -1,52 +1,58 @@
 import { Server as HttpServer } from "http";
 import { Server as SocketServer, Socket } from "socket.io";
+import dotenv from "dotenv";
 import jwt, { JwtPayload } from "jsonwebtoken";
 import {
   validateUserForSession,
   saveMessage,
 } from "./chatSession_service";
 
+dotenv.config();
+
 let io: SocketServer;
 
 export function initSocketServer(server: HttpServer) {
   io = new SocketServer(server, {
     cors: {
-      origin: process.env.CLIENT_URL || "*",
-      methods: ["GET", "POST"]
+      origin: "*",
+      methods: ["GET", "POST"],
+      credentials: false,
     }
   });
 
-  // Auth middleware — runs before every connection
   io.use(async (socket, next) => {
     try {
       const token = socket.handshake.auth.token;
+      console.log("🔵 socket auth token:", token);
       if (!token) return next(new Error("Missing token"));
 
-      const payload = jwt.verify(token, process.env.JWT_SECRET!) as JwtPayload;
+      const payload = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET!) as JwtPayload;
+      console.log("🔵 payload:", payload);
       if (!payload.email) return next(new Error("Invalid token"));
 
       socket.data.email = payload.email;
       next();
-    } catch {
+    } catch (e) {
+      console.log("🔴 jwt verify error:", e);
       next(new Error("Invalid token"));
     }
   });
 
   io.on("connection", (socket: Socket) => {
-    // ── Join a chat room ──────────────────────────────────────────
+    console.log("✅ new socket connection:", socket.id);
+
     socket.on("join_session", async (sessionId: string) => {
+      console.log("🔵 joining session:", sessionId);
       try {
         const { session, senderId, senderType } = await validateUserForSession(
           sessionId,
           socket.data.email
         );
 
-        // Store on socket for use in message handler
         socket.data.sessionId = session.id;
         socket.data.senderId = senderId;
         socket.data.senderType = senderType;
 
-        // Join Socket.io room keyed by sessionId
         socket.join(sessionId);
 
         socket.emit("joined", {
@@ -54,13 +60,14 @@ export function initSocketServer(server: HttpServer) {
           message: "Connected to chat session"
         });
 
+        console.log("✅ joined session:", sessionId, "as:", senderType);
+
       } catch (err: any) {
+        console.log("🔴 join_session error:", err.message);
         socket.emit("error", { message: err.message });
-        socket.disconnect();
       }
     });
 
-    // ── Send a message ────────────────────────────────────────────
     socket.on("send_message", async (content: string) => {
       try {
         const { sessionId, senderId, senderType } = socket.data;
@@ -73,17 +80,16 @@ export function initSocketServer(server: HttpServer) {
         }
 
         const message = await saveMessage(sessionId, senderId, senderType, content);
-
-        // Broadcast to everyone in the room including sender
         io.to(sessionId).emit("new_message", message);
 
       } catch (err: any) {
+        console.log("🔴 send_message error:", err.message);
         socket.emit("error", { message: err.message });
       }
     });
 
-    // ── Disconnect ────────────────────────────────────────────────
     socket.on("disconnect", () => {
+      console.log("🔵 socket disconnected:", socket.id);
       const { sessionId } = socket.data;
       if (sessionId) {
         socket.to(sessionId).emit("user_left", {
@@ -96,12 +102,10 @@ export function initSocketServer(server: HttpServer) {
   return io;
 }
 
-// Called by cron when appointment ends
 export function closeSocketSession(sessionId: string) {
   if (!io) return;
   io.to(sessionId).emit("session_ended", {
     message: "Appointment has ended. Chat is now closed."
   });
-  // Disconnect all sockets in the room
   io.in(sessionId).disconnectSockets(true);
 }
