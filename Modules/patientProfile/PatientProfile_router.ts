@@ -1,6 +1,6 @@
 import express, { Router } from "express";
 import newPatientProfile from "./editPatientProfile_controller";
-import addRecordController from "./addRecord_Controller";
+import addRecordController from "./addRecord_controller";
 import { upload } from "../../multer";
 import getPatient from "./getPatientProfile_controller";
 import profileDatabyId from "./getPatientProfileid_controller";

@@ -9,7 +9,10 @@ export default async function patientProfileId(id : string){
             throw new Error("user not found");
         }
         const patient = await prisma.patient.findUnique({
-            where:{userId : user.id}
+            where:{userId : user.id},
+            include:{
+                records:true
+            }
         })
         if(!patient){
             throw new Error("doctor not found");
