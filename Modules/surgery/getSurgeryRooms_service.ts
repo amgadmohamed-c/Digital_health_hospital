@@ -1,30 +1,43 @@
 import prisma from "../lib/prisma";
 
 export default async function getSurgeryRoomsService() {
-    try{
-        const allRooms = await prisma.room.findMany();
+  try {
+    const dep = await prisma.department.findFirst({
+      where: { name: "SURGERY" },
+    });
 
-        console.log("ALL ROOMS:", allRooms);
-        const departments = await prisma.department.findMany();
-
-        console.log("ALL DEPARTMENTS:", departments);
-        const dep = await prisma.department.findFirst({
-            where:{name:"SURGERY"}
-        })
-        if(!dep){
-            throw new Error("department Doesnt exist yet");
-        }
-        const rooms = await prisma.room.findMany({
-            where:{departmentId : dep.id} ,
-            include:{surgeries:true }
-        })
-        console.log("ROOMS:", rooms);
-
-        return rooms
+    if (!dep) {
+      throw new Error("Surgery department doesn't exist yet.");
     }
-    catch(err:any){
-        throw new Error(err.message);
 
-    }
-    
+    const rooms = await prisma.room.findMany({
+      where: { departmentId: dep.id },
+      include: {
+        surgeries: {
+          where: {
+            surgeryStatus: { in: ["PENDING", "IN_PROGRESS"] },
+          },
+          select: {
+            id: true,
+            scheduledAt: true,
+            surgeryStatus: true,
+          },
+        },
+        devices: {          // ← new
+          select: {
+            id: true,
+            name: true,
+            type: true,
+            status: true,
+            serialNo: true,
+          },
+          orderBy: { name: "asc" },
+        },
+      },
+    });
+
+    return rooms;
+  } catch (err: any) {
+    throw new Error(err.message);
+  }
 }

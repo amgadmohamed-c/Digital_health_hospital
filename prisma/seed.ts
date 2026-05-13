@@ -1,9 +1,36 @@
 import 'dotenv/config'; 
-import { PrismaClient } from '@prisma/client';
- import { PrismaPg } from '@prisma/adapter-pg'; 
- import bcrypt from "bcrypt" 
-const adapter = new PrismaPg({ connectionString:process.env.DATABASE_URL }) 
-const prisma = new PrismaClient( {adapter, } );
+import  {PrismaClient} from "../generated/prisma";
+import { PrismaPg } from '@prisma/adapter-pg'; 
+import bcrypt from "bcrypt";
+
+const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
+const prisma = new PrismaClient({ adapter });
+
+// ─── Device templates per surgery room ───────────────────────────────────────
+const DEVICE_TEMPLATES: Array<{ name: string; type: string }> = [
+  { name: "Anesthesia Machine",         type: "Anesthesia" },
+  { name: "Ventilator",                 type: "Respiratory" },
+  { name: "Patient Monitor",            type: "Monitoring" },
+  { name: "Electrosurgical Unit (ESU)", type: "Surgical" },
+  { name: "Surgical Light (Primary)",   type: "Lighting" },
+  { name: "Surgical Light (Secondary)", type: "Lighting" },
+  { name: "Suction Machine",            type: "Suction" },
+  { name: "Infusion Pump",              type: "Infusion" },
+  { name: "Pulse Oximeter",             type: "Monitoring" },
+  { name: "Defibrillator",              type: "Cardiac" },
+  { name: "Laparoscopy Tower",          type: "Endoscopy" },
+  { name: "C-Arm Fluoroscope",          type: "Imaging" },
+];
+
+type DeviceStatus = "AVAILABLE" | "IN_USE" | "MAINTENANCE" | "OUT_OF_SERVICE";
+
+function randomStatus(index: number): DeviceStatus {
+  const roll = index % 10;
+  if (roll <= 6) return "AVAILABLE";
+  if (roll <= 8) return "IN_USE";
+  if (roll === 9) return "MAINTENANCE";
+  return "OUT_OF_SERVICE";
+}
 
 async function main() {
   console.log("🌱 Seeding started...");
@@ -37,7 +64,6 @@ async function main() {
   const surgeryRooms = Array.from({ length: 20 }, (_, i) => ({
     name: `OR-${String(i + 1).padStart(2, '0')}`,
     type: "SURGERY" as const,
-    
     departmentId: surgeryDept.id,
   }));
 
@@ -53,6 +79,33 @@ async function main() {
   });
 
   console.log("✓ Rooms seeded");
+
+  // ─────────────────────────────────────────────
+  // MEDICAL DEVICES
+  // ─────────────────────────────────────────────
+  const seededSurgeryRooms = await prisma.room.findMany({
+    where: { departmentId: surgeryDept.id },
+  });
+
+  let globalIndex = 0;
+  const deviceRows = seededSurgeryRooms.flatMap(room =>
+    DEVICE_TEMPLATES.map(template => ({
+      name:     template.name,
+      type:     template.type,
+      roomId:   room.id,
+      status:   randomStatus(globalIndex++),
+      serialNo: `SN-${room.name}-${template.type.slice(0, 3).toUpperCase()}-${String(globalIndex).padStart(4, '0')}`,
+    }))
+  );
+
+  await prisma.medicalDevice.createMany({
+    data: deviceRows,
+    skipDuplicates: false,
+  });
+
+  console.log(
+    `✓ Medical devices seeded — ${deviceRows.length} devices across ${seededSurgeryRooms.length} surgery rooms`
+  );
 
   // ─────────────────────────────────────────────
   // ADMIN USER
